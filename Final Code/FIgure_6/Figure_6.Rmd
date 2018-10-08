@@ -1,0 +1,111 @@
+---
+title: "Figure_6"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Construct a phyloseq object as previously done for Figure 3.
+
+```{r Subset in and out data}
+
+Fiord_phyloseq_in_out = subset_samples(Fiord_phyloseq, !Sample_type == "Transverse")
+#Exclude transverse samples.
+Fiord_phyloseq_in_out
+```
+
+```{r Calculate α-diversity}
+library(microbiome)
+alpha_summary_in_out <- estimate_richness(Fiord_phyloseq_in_out, measures = c("Observed", "Shannon"))
+Evenness_in_out <- evenness(Fiord_phyloseq_in_out, 'pielou')
+alpha_summary_in_out$Pielou <- Evenness_in_out$pielou
+#combine with metadata
+alpha_meta_in_out <- data.frame(alpha_summary_in_out, sample_data(Fiord_phyloseq_in_out))
+alpha_meta_in_out
+```
+```{r Make plot}
+library(ggplot2)
+
+
+
+levels(alpha_meta_in_out$Sample_Depth)
+
+levels(alpha_meta_in_out$Sample_Depth) = c("0 m", "10 m")
+
+Fjordlist = c("Breaksea Sound", "Chalky Inlet", "Doubtful Sound", "Dusky Sound", "Wet Jacket Arm")
+
+Observed_Richness_in_out_D <- ggplot(alpha_meta_in_out, aes(x=Sample_Site, y=Observed)) + 
+  geom_point(size=1, aes(colour=Sample_type)) +
+  geom_smooth(method = "lm") +         
+  xlab("Fjord") +
+  ggtitle("In and out samples separated by depth (metre)") +
+  labs(y = expression ("Observed Richness")) +
+  expand_limits(y=0) +                        
+  theme_bw() +
+  facet_wrap(~Sample_Depth) +
+  labs(colour = "Sample region", title = element_blank())+
+  scale_colour_manual(labels = c("Inner", "Outer"), values = c("red", "blue"))+
+  scale_x_discrete(labels = Fjordlist)+
+  theme(axis.text.x=element_text(color = "black", angle=45, vjust=.8, hjust=0.8))
+
+Observed_Richness_in_out_D
+
+dev.copy(png, "Figure3 - α-diversity", units = "in", width = 4, height = 3.2, res = 500)
+dev.off()
+```
+```{r Significance KW, results, results='markup'}
+#non parametric test
+kruskal.test(Observed ~ Sample_type, data = alpha_meta_in_out)
+kruskal.test(Observed ~ Sample_Site, data = alpha_meta_in_out)
+kruskal.test(Observed ~ Sample_Depth, data = alpha_meta_in_out)
+
+kruskal.test(Shannon ~ Sample_type, data = alpha_meta_in_out)
+kruskal.test(Shannon ~ Sample_Site, data = alpha_meta_in_out)
+kruskal.test(Shannon ~ Sample_Depth, data = alpha_meta_in_out)
+```
+```{r KW interactions, results, results='markup'}
+library(MultNonParam)
+library(PMCMR)
+interAB<-interaction(alpha_meta_in_out$Sample_Site, alpha_meta_in_out$Sample_Depth, alpha_meta_in_out$Sample_type)
+KWInt_Shan<-kruskal.test(Observed ~ interAB, data = alpha_meta_in_out)
+
+```
+```{r KW for rich/site/depth}
+library(MultNonParam)
+library(PMCMR)
+
+
+interdepthxtype<-interaction(alpha_meta_in_out$Sample_Depth, alpha_meta_in_out$Sample_type)
+KWInt_DT<-kruskal.test(Observed ~ interdepthxtype, data = alpha_meta_in_out)
+
+intersitextype<-interaction(alpha_meta_in_out$Sample_Site, alpha_meta_in_out$Sample_type)
+KWInt_ST<-kruskal.test(Observed ~ intersitextype, data = alpha_meta_in_out)
+
+intersitexdepth<-interaction(alpha_meta_in_out$Sample_Site, alpha_meta_in_out$Sample_Depth)
+KWInt_SD<-kruskal.test(Observed ~ intersitexdepth, data = alpha_meta_in_out)
+
+intersitexdepthxtype<-interaction(alpha_meta_in_out$Sample_Site, alpha_meta_in_out$Sample_Depth, alpha_meta_in_out$Sample_type)
+KWInt_Shan<-kruskal.test(Observed ~ intersitexdepthxtype, data = alpha_meta_in_out)
+
+```
+library(phyloseq)  
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(scales)
+library(reshape)
+library(reshape2)
+library(RColorBrewer)
+library(grid)
+library(microbiome)
+library(lme4)
+library(grid)
+library(gridExtra)
+library(RcmdrMisc)
+library(Hmisc)
+library(vegan)
+library(corrplot)
+library(Rmisc)

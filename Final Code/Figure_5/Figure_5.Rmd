@@ -1,0 +1,170 @@
+---
+title: "Figure_5"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Construct phyloseq object as done previously for Figure 3.
+
+
+```{Construct vertical phyloseq object}
+Fiord_phyloseq_Vert = subset_samples(Fiord_phyloseq, !Sample_type == "in" & !Sample_type == "out")
+Fiord_phyloseq_Vert = subset_samples(Fiord_phyloseq_Vert, Sample_Site == "L5")
+```
+```{r Import data}
+bmsd_dataframe = data.frame(bmsd_PCA)
+bmsd_dataframe_no_name = within(bmsd_dataframe, rm("New_Name")) #remove the new name column
+
+bmsd_dataframe_no_name_NA = na.omit(bmsd_dataframe_no_name)
+
+bmsd_dataframe_no_name_NA_Duin0 = bmsd_dataframe_no_name_NA[-c(13), ] #remove row 13
+bmsd_dataframe_no_name_NA_Win0 = bmsd_dataframe_no_name_NA_Duin0[-c(31), ] #remove row 31
+
+is.na(bmsd_dataframe_no_name_NA)
+
+bmsd_rm_Long = bmsd_dataframe_no_name_NA
+bmsd_rm_Long[1:16] = list(NULL)
+bmsd_rm_Long[17:21] = list(NULL)
+```
+
+#Carbon utilisation
+```{r Organise dataframe}
+#Attempting to make a new thing. I can't seem to attach the site and in/out to the PCA plot.
+write.csv(bmsd_rm_Long,file = "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Csv_df.csv")
+try_otherwayround = read.csv("/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Csv_df.csv", row.names = 1)
+    write.csv(try_otherwayround,file =
+                "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/try_otherwayround.csv")
+    
+gettingtedious = within(try_otherwayround, rm())
+
+write.csv(gettingtedious,file = "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/gettingtedious.csv")
+
+gettingtedious_Vert = gettingtedious[-c(1, 2, 3, 4, 5, 6, 7, 14, 15, 16),]
+#Carbon utilisation
+```
+```{r Carbon utilisation depth regression}
+#Export for Nray_Curtis distance plot
+write.csv(gettingtedious_Vert, "Bray_Ecolog_df_setup.csv")
+#Add depth as a column.
+
+#Import new df
+Ecolog_Bray_Setup = read.csv("Bray_Ecolog_df_setup.csv", row.names = 33)
+Ecolog_Bray_Setup = Ecolog_Bray_Setup[,-1]
+
+#Carry out Bray-Distance 
+Ecolog_bray = vegdist(Ecolog_Bray_Setup, method = "bray", binary = T) #Binary as either capable of using the carbon source as a community or not.
+
+#Export for record keeping
+write.csv(as.matrix(Ecolog_bray), "Ecolog_bray.csv")
+
+#Use surface as a reference to everything else and import as new df
+Firstref_bray_ecolog_df = read.csv("Firstref_bray_ecolog_df.csv")
+
+Ecolog_depth_plot = ggplot(Firstref_bray_ecolog_df, aes(y = Bray_Distance, x= Sample_Depth)) + geom_line() +
+  geom_point()+
+  ylab("Bray-Curtis dissimilarity of carbon \n utilisation compared to surface")+
+  xlab("Sample Depth (m)")+
+  coord_flip()+
+  scale_x_reverse()
+
+
+
+Ecolog_depth_plot
+
+dev.copy(png, "Ecolog_Depth_regeression", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+```
+```{r Carbon utilisation Spearman}
+
+#Use Bray-distance not raw data
+Ecolog_spearman = cor.test(Firstref_bray_ecolog_df$Bray_Distance, Firstref_bray_ecolog_df$Sample_Depth, method = "spearman")
+Ecolog_spearman
+#rho = 0.2571429 for Distance vs. Bray
+#p-value = 0.6583
+
+#Non-significant
+```
+#Physiochemical parameters
+```{r Regression of physiochemical parameters}
+Vertical_CTD = read.csv("/Users/sven/Desktop/Thesis/Final Code/Figure 10/LongSound_CTD.csv", row.names = 1)
+
+Vert_CTD = Vertical_CTD[-c(1:8, 15:20),]
+
+#Add sample Depth to df
+Vert_CTD$Sample_Depth = as.numeric(c(0, 10, 40, 100, 200, 360))
+
+par(mar = c(5,5,2,5)) #Define plot margins
+with(plot(Vert_CTD$Sample_Depth, #X-axis 
+          Vert_CTD$Temperature, #Y-axis
+     col = "red",  #Colour
+     type = "l", #Plot type
+     xlab = "Sample Depth (m)", #X-axis label
+     ylab = "Temperature (˚C) and Oxygen Saturation (%)",
+     ylim = c(5,14))) #Y-axis label
+
+par(new = T)
+with(plot(Vert_CTD$Sample_Depth, #X-axis
+          Vert_CTD$Salinity, #Y-axis
+          col = "blue", #Make the line blue
+          type = "l", #Make it a line graph
+          xlab = NA, #Exclude the x axis label
+          ylab = NA, #Exclude the y axis label
+          axes = F, #Exclude the axes for this one
+          cex = 1)) #Normal size of plots
+
+axis(side = 4) #Make the second axis on the right
+
+mtext(side = 4,line = 2.75, "Salinity (ppt)") #Define the second axis label.
+
+par(new = T)
+with(plot(Vert_CTD$Sample_Depth, #X-axis
+          Vert_CTD$OxygenPerSat, #Y-axis
+          col = "green", #Make the line green
+          type = "l", #Make it a line graph
+          xlab = NA, #Exclude the x axis label
+          ylab = NA, #Exclude the y axis label
+          axes = F, #Exclude the axes for this one
+          cex = 1,
+          ylim = c(5,13))) #Normal size of plots
+
+
+
+legend("bottomright",
+       legend = c("Temperature", "Salinity", "Oxygen"),
+       lty = c(1,0), 
+       pch = c(NA,16), 
+       col = c("red", "blue", "green"),
+       cex = 0.75)
+
+
+dev.copy(png, "CTD_regression", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+```{r CTD spearman - no rare taxa}
+#Use raw data
+
+Salinity_spearman = cor.test(Vert_CTD$Salinity, Vert_CTD$Sample_Depth, method = "spearman")
+Salinity_spearman
+#rho = 0.9428571 for Distance vs. Bray
+#p-value = 0.01667
+#Significant
+
+Temperature_spearman = cor.test(Vert_CTD$Temperature, Vert_CTD$Sample_Depth, method = "spearman")
+Temperature_spearman
+#rho = -0.8857143 for Distance vs. Bray
+#p-value = 0.03333
+#Significant
+
+OxygenPerSat_spearman = cor.test(Vert_CTD$OxygenPerSat, Vert_CTD$Sample_Depth, method = "spearman")
+OxygenPerSat_spearman
+#rho = -0.4857143 for Distance vs. Bray
+#p-value = 0.3556
+#Non-significant
+
+```

@@ -1,0 +1,1238 @@
+---
+title: "Figure_12"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Construct the phyloseq object as described in figure 3.
+
+```{r Packages needed}
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+library(Rmisc)
+library(vegan)
+library(dplyr)
+
+
+```
+```{r Phyloseq object}
+#Remove the transverse samples
+Fiord_phyloseq_Hor = subset_samples(Fiord_phyloseq, Sample_type == "Transverse")
+Fiord_phyloseq_Horonly = subset_samples(Fiord_phyloseq_Hor, Sample_Depth == "0" | Sample_Depth == "10")
+
+Fiord_phyloseq_Horonly_surface = subset_samples(Fiord_phyloseq_Hor, Sample_Depth == "0")
+Fiord_phyloseq_Horonly_10m = subset_samples(Fiord_phyloseq_Hor, Sample_Depth == "10")
+
+
+```
+#Make plot of significant phyla that change along the horizontal axis
+##Surface
+```{r Significant phyloseq to df}
+keepTaxa_FDR_surface <- onlysignificance_surface_Genus$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_surface <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df <- tax_glom(Significant_taxa_surface, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df <- Significant_taxa_surface_df[order(Significant_taxa_surface_df$Phylum),] #Order them at the Phylum level
+
+#Add distance from L1 to df based on sample site:
+##Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L1", Significant_taxa_surface_df$New_Name)] = 0
+Significant_taxa_surface_df$Distancefrom_L1[grep("L2", Significant_taxa_surface_df$New_Name)] = as.numeric(5.59)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L3", Significant_taxa_surface_df$New_Name)] = as.numeric(14.3)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L4", Significant_taxa_surface_df$New_Name)] = as.numeric(10.67)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L5", Significant_taxa_surface_df$New_Name)] = as.numeric(8.47)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L6", Significant_taxa_surface_df$New_Name)] = as.numeric(4.73)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L7", Significant_taxa_surface_df$New_Name)] = as.numeric(3.16)
+Significant_taxa_surface_df$Distancefrom_L1[grep("L8", Significant_taxa_surface_df$New_Name)] = as.numeric(2.47)
+
+```
+```{r Rename rare taxa}
+Significant_taxa_surface_df$Phylum <- as.character(Significant_taxa_surface_df$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_surface <- ddply(Significant_taxa_surface_df, ~Phylum, function(x) c(medians_surface=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_surface <- medians_surface[medians_surface$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_surface_df[Significant_taxa_surface_df$Phylum %in% remainder_surface,]$Phylum <- 'RareTaxa'
+
+```
+```{r Statistics - surface}
+Summary_surface <- summarySE(Significant_taxa_surface_df, measurevar="Abundance", groupvars=c("Phylum", "Distancefrom_L1"))
+Summary_surface
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary_surface, "Summary_surface.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary_surface<-dplyr::arrange(Summary_surface,Phylum, Abundance)
+
+#Only take the unique Phylums
+Summary_surface$Phylum <- factor(Summary_surface$Phylum,
+                                         levels=(unique(Summary_surface$Phylum)))
+
+
+#Save as table for ease of reading.
+write.csv(Summary_surface, file = "Ordered_summary_surface.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab", Verrucomicrobia = "tan", RareTaxa = "black")
+  
+  
+Summary_surface_plot<-ggplot(Summary_surface, 
+                        aes(x=Distancefrom_L1, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() + 
+  #facet_grid(~Sample_Depth, 
+        #     drop = TRUE, 
+         #    space = "fixed", 
+          #   scales = "free", 
+           #  margins = "TRUE", 
+            # labeller = label_wrap_gen(width = 16, multi_line = TRUE))+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Distance from the outermost sample (km)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list, labels = c("Bacteroidetes", "Planctomycetes", "Proteobacteria", "Rare Taxa (<1%)", "Verrucomicrobia"))
+
+
+Summary_surface_plot
+
+dev.copy(png, "Significant_phylum_surface", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+##10m
+```{r Significant phyloseq to df}
+keepTaxa_FDR_10m <- onlysignificance_10m_Genus$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_10m <- subset_taxa(Fiord_phyloseq_Horonly_10m, Genus %in% keepTaxa_FDR_10m) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_10m_df <- tax_glom(Significant_taxa_10m, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_10m_df <- Significant_taxa_10m_df[order(Significant_taxa_10m_df$Phylum),] #Order them at the Phylum level
+
+#Add distance from L1 to df based on sample site:
+##Distance_list_10m = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L1", Significant_taxa_10m_df$New_Name)] = 0
+Significant_taxa_10m_df$Distancefrom_L1[grep("L2", Significant_taxa_10m_df$New_Name)] = as.numeric(5.59)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L3", Significant_taxa_10m_df$New_Name)] = as.numeric(14.3)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L4", Significant_taxa_10m_df$New_Name)] = as.numeric(10.67)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L5", Significant_taxa_10m_df$New_Name)] = as.numeric(8.47)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L6", Significant_taxa_10m_df$New_Name)] = as.numeric(4.73)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L7", Significant_taxa_10m_df$New_Name)] = as.numeric(3.16)
+Significant_taxa_10m_df$Distancefrom_L1[grep("L8", Significant_taxa_10m_df$New_Name)] = as.numeric(2.47)
+
+```
+```{r Rename rare taxa}
+Significant_taxa_10m_df$Phylum <- as.character(Significant_taxa_10m_df$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_10m <- ddply(Significant_taxa_10m_df, ~Phylum, function(x) c(medians_10m=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_10m <- medians_10m[medians_10m$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_10m_df[Significant_taxa_10m_df$Phylum %in% remainder_10m,]$Phylum <- 'RareTaxa'
+
+```
+```{r Statistics - 10m}
+Summary_10m <- summarySE(Significant_taxa_10m_df, measurevar="Abundance", groupvars=c("Phylum", "Distancefrom_L1"))
+Summary_10m
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary_10m, "Summary_10m.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary_10m<-dplyr::arrange(Summary_10m,Phylum, Abundance)
+
+#Only take the unique Phylums
+Summary_10m$Phylum <- factor(Summary_10m$Phylum,
+                                         levels=(unique(Summary_10m$Phylum)))
+
+
+#Save as table for ease of reading.
+write.csv(Summary_10m, file = "Ordered_summary_10m.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab", Verrucomicrobia = "tan", RareTaxa = "black")
+  
+  
+Summary_10m_plot<-ggplot(Summary_10m, 
+                        aes(x=Distancefrom_L1, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() + 
+  #facet_grid(~Sample_Depth, 
+        #     drop = TRUE, 
+         #    space = "fixed", 
+          #   scales = "free", 
+           #  margins = "TRUE", 
+            # labeller = label_wrap_gen(width = 16, multi_line = TRUE))+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Distance from the outermost sample (km)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)+
+  theme(axis.text.x =element_text(angle = 40,hjust=1))
+
+
+Summary_10m_plot
+
+dev.copy(png, "Significant_phylum_10m", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+#Significance with oxygen
+##Surface
+```{r Set up df - surface}
+
+#Export
+write.csv(Forspearman_Genus_surface_df, "Add_variables_surface.csv")
+
+#Add variables
+
+#Import
+Spearman_v2_surface_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Add_variables_surface.csv", row.names = 1, stringsAsFactors = F)
+
+Spearman_v2_surface_df = as.data.frame(lapply(Spearman_v2_surface_df[1:988], as.numeric))
+
+
+```
+```{r Carry out spearman for Oxygen - surface}
+
+#Make df to add values to.
+Spearman_results_surface_Ox = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_surface_Ox = Spearman_results_surface_Ox[1:948,1:4]
+
+Spearman_surface_Ox = lapply(Spearman_v2_surface_df, MARGIN = 2, cor.test, y = Spearman_v2_surface_df$OxPerSat, method = "s")
+#Set up and run loops for rho and p values.
+y=Spearman_surface_Ox[1:948]
+rho_list_surface_Ox = vector("list", 948)
+for (i in 1:length(y) ){
+  rho_list_surface_Ox[[i]] = Spearman_surface_Ox[[i]]$estimate
+  names(rho_list_surface_Ox[[i]]) = names(Spearman_surface_Ox)[i]
+  Spearman_results_surface_Ox[i,2] = rho_list_surface_Ox[i]
+  Spearman_results_surface_Ox[i,1] = names(Spearman_surface_Ox[i])
+}
+
+pvalue_list_surface_Ox = vector("list", 948)
+for (i in 1:length(y) ){
+  pvalue_list_surface_Ox[[i]] = Spearman_surface_Ox[[i]]$p.value
+  names(pvalue_list_surface_Ox[[i]]) = names(Spearman_surface_Ox)[i]
+  Spearman_results_surface_Ox[i,3] = pvalue_list_surface_Ox[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_surface_Ox = subset(Spearman_results_surface_Ox, !rho == "NA")
+
+#See surprisingly many organisms at the Genus level associate with a change in oxygen at the surface. But that isn't what we want, we want to see if any change at 10m depth as this also correlates with the distance from L1 (the outermost sample).
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_surface_Ox = p.adjust(Spearman_results_noNA_surface_Ox$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_surface_df_Ox = as.data.frame(adjusted_p.value_surface_Ox)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_surface_Ox$adjusted.p.value = adjusted_p.value_surface_df_Ox$adjusted_p.value_surface
+
+#Nothing is significant if FDR corrected.
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_surface_Ox, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_surface_Ox.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_surface_Genus_Ox = subset(Spearman_results_noNA_surface_Ox, p.value < 5e-2)
+
+#No significant taxa changes for adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_surface_Genus_Ox, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_surface_Genus_Ox.csv")
+
+```
+##10m
+```{r Set up df - 10m}
+
+#Export
+write.csv(Forspearman_Genus_10m_df, "Add_variables_10m.csv")
+
+#Add variables
+
+#Import
+Spearman_v2_10m_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Add_variables_10m.csv", row.names = 1, stringsAsFactors = F)
+
+Spearman_v2_10m_df = as.data.frame(lapply(Spearman_v2_10m_df[1:988], as.numeric))
+
+
+```
+```{r Carry out spearman for Oxygen - 10m}
+
+#Make df to add values to.
+Spearman_results_10m_Ox = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_10m_Ox = Spearman_results_10m_Ox[1:948,1:4]
+
+Spearman_10m_Ox = lapply(Spearman_v2_10m_df, MARGIN = 2, cor.test, y = Spearman_v2_10m_df$OxPerSat, method = "s")
+#Set up and run loops for rho and p values.
+y=Spearman_10m_Ox[1:948]
+rho_list_10m_Ox = vector("list", 948)
+for (i in 1:length(y) ){
+  rho_list_10m_Ox[[i]] = Spearman_10m_Ox[[i]]$estimate
+  names(rho_list_10m_Ox[[i]]) = names(Spearman_10m_Ox)[i]
+  Spearman_results_10m_Ox[i,2] = rho_list_10m_Ox[i]
+  Spearman_results_10m_Ox[i,1] = names(Spearman_10m_Ox[i])
+}
+
+pvalue_list_10m_Ox = vector("list", 948)
+for (i in 1:length(y) ){
+  pvalue_list_10m_Ox[[i]] = Spearman_10m_Ox[[i]]$p.value
+  names(pvalue_list_10m_Ox[[i]]) = names(Spearman_10m_Ox)[i]
+  Spearman_results_10m_Ox[i,3] = pvalue_list_10m_Ox[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_10m_Ox = subset(Spearman_results_10m_Ox, !rho == "NA")
+
+#See surprisingly few organisms at the Genus level associating with a change in oxygen at 10m. 
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_10m_Ox = p.adjust(Spearman_results_noNA_10m_Ox$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_10m_df_Ox = as.data.frame(adjusted_p.value_10m_Ox)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_10m_Ox$adjusted.p.value = adjusted_p.value_10m_df_Ox$adjusted_p.value_10m
+
+#Nothing is significant if FDR corrected.
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_10m_Ox, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_10m_Ox.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_10m_Genus_Ox = subset(Spearman_results_noNA_10m_Ox, p.value < 5e-2)
+
+#No significant taxa changes for either the unadjusted or adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_10m_Genus_Ox, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_10m_Genus_Ox.csv")
+
+```
+##Plot Surface
+Only plotting the surface as at 10m we saw no significant micorbial changes.
+
+As we identified organisms that change significantly in relation to oxygen saturation (%), we want to plot this against the distance from L1 to visualise their pattern.
+
+```{r Significant phyloseq to df - oxygen}
+keepTaxa_FDR_surface_Ox <- onlysignificance_surface_Genus_Ox$Genus #Extract the OTU table that was shown to be significant
+
+Significant_taxa_surface_Ox <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Ox) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Ox <- tax_glom(Significant_taxa_surface_Ox, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Ox <- Significant_taxa_surface_df_Ox[order(Significant_taxa_surface_df_Ox$Phylum),] #Order them at the Phylum level
+
+#Add Distance
+##Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L1", Significant_taxa_surface_df_Ox$New_Name)] = 0
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L2", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(5.59)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L3", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(14.3)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L4", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(10.67)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L5", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(8.47)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L6", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(4.73)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L7", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(3.16)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L8", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(2.47)
+
+```
+```{r Rename rare taxa}
+Significant_taxa_surface_df_Ox$Phylum <- as.character(Significant_taxa_surface_df_Ox$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_surface_Ox <- ddply(Significant_taxa_surface_df_Ox, ~Phylum, function(x) c(medians_surface_Ox=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_surface_Ox <- medians_surface_Ox[medians_surface_Ox$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_surface_df_Ox[Significant_taxa_surface_df_Ox$Phylum %in% remainder_surface_Ox,]$Phylum <- 'RareTaxa'
+
+```
+```{r Statistics - surface}
+Summary_surface_Ox <- summarySE(Significant_taxa_surface_df_Ox, measurevar="Abundance", groupvars=c("Phylum", "Distancefrom_L1"))
+Summary_surface_Ox
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary_surface_Ox, "Summary_surface_Ox.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary_surface_Ox<-dplyr::arrange(Summary_surface_Ox,Phylum, Abundance)
+
+#Only take the unique Phylums
+Summary_surface$Phylum_Ox <- factor(Summary_surface_Ox$Phylum,
+                                         levels=(unique(Summary_surface_Ox$Phylum)))
+
+
+#Save as table for ease of reading.
+write.csv(Summary_surface_Ox, file = "Ordered_summary_surface_Ox.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab", Verrucomicrobia = "tan", RareTaxa = "black")
+  
+  
+Summary_surface_plot_Ox<-ggplot(Summary_surface_Ox, 
+                        aes(x=Distancefrom_L1, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() + 
+  #facet_grid(~Sample_Depth, 
+        #     drop = TRUE, 
+         #    space = "fixed", 
+          #   scales = "free", 
+           #  margins = "TRUE", 
+            # labeller = label_wrap_gen(width = 16, multi_line = TRUE))+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Distance from the outermost sample (km)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)
+
+
+Summary_surface_plot_Ox
+
+dev.copy(png, "Significant_phylum_surface_ox", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+```
+#Significant vs. Nonsignificant plot
+```{r Label the significant vs. non-significant}
+
+
+
+keepTaxa_FDR_surface <- onlysignificance_surface_Genus$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_surface <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df <- tax_glom(Significant_taxa_surface, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df <- Significant_taxa_surface_df[order(Significant_taxa_surface_df$Phylum),] #Order them at the Phylum level
+
+
+# get abundance in %
+Sample_counts <- transform_sample_counts(Fiord_phyloseq_Horonly, function(x) x/sum(x))
+
+# agglomerate taxa
+glom <- tax_glom(Sample_counts, taxrank = 'Phylum')
+
+# create dataframe from phyloseq object
+dat <- psmelt(glom)
+dat = dfdatv1
+
+# convert Phylum to a character vector from a factor because R
+dat$Genus <- as.character(dat$Genus)
+
+#Convert to character, as R
+Significant_taxa <- as.character(onlysignificance_surface_Genus$Genus)
+
+#Change the name of the significant organisms
+dat[dat$Genus %in% Significant_taxa,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df = subset(dat, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat[dat$Genus %!in% Significant_taxa,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df = subset(dat, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign = rbind(Nonsignificant_df, Significant_df)
+
+#Plot
+
+plotme = ggplot(plotsign.vs.nonSign,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme
+
+dev.copy(png, "Sign.vs.NonSign", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign$Genus))
+
+#Total number of sample
+ 39123       +     920 
+#40043
+
+#Ratio of significant
+920/40043
+#2.30%
+
+#Ratio of non-significant
+39123/40043
+#97.70%
+```
+```{r Significant vs. non-significant - oxygen}
+
+
+
+keepTaxa_FDR_surface_Ox <- onlysignificance_surface_Genus_Ox$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_surface_Ox <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Ox) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Ox <- tax_glom(Significant_taxa_surface_Ox, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Ox <- Significant_taxa_surface_df_Ox[order(Significant_taxa_surface_df_Ox$Phylum),] #Order them at the Phylum level
+
+
+
+# get abundance in %
+Sample_counts_Ox <- transform_sample_counts(Fiord_phyloseq_Horonly, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Ox <- tax_glom(Sample_counts_Ox, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Ox <- psmelt(glom_Ox)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Ox$Genus <- as.character(dat_Ox$Genus)
+
+#Convert to character, as R
+Significant_taxa_Ox <- as.character(onlysignificance_surface_Genus_Ox$Genus)
+
+#Change the name of the significant organisms
+dat_Ox[dat_Ox$Genus %in% Significant_taxa_Ox,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Ox = subset(dat_Ox, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Ox[dat_Ox$Genus %!in% Significant_df_Ox,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Ox = subset(dat_Ox, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Ox = rbind(Nonsignificant_df_Ox, Significant_df_Ox)
+
+#Plot
+plotme_Ox = ggplot(plotsign.vs.nonSign_Ox,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Ox
+
+dev.copy(png, "Sign.vs.NonSign_Ox", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign_Ox$Genus))
+
+#Total number of sample
+ 40043       +     782
+#40825
+
+#Ratio of significant
+782/40825
+#1.9%
+
+#Ratio of non-significant
+40043/40843
+#98%
+
+```
+#Significant with Salinity
+##Surface
+```{r Set up df - surface}
+
+#Export
+write.csv(Forspearman_Genus_surface_df, "Add_variables_surface.csv")
+
+#Add variables
+
+#Import
+Spearman_v2_surface_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Add_variables_surface.csv", row.names = 1, stringsAsFactors = F)
+
+Spearman_v2_surface_df = as.data.frame(lapply(Spearman_v2_surface_df[1:988], as.numeric))
+
+
+```
+```{r Carry out spearman for Salinity - surface}
+
+#Make df to add values to.
+Spearman_results_surface_Sal = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_surface_Sal = Spearman_results_surface_Sal[1:948,1:4]
+
+Spearman_surface_Sal = lapply(Spearman_v2_surface_df, MARGIN = 2, cor.test, y = Spearman_v2_surface_df$Salinity, method = "s")
+#Set up and run loops for rho and p values.
+y=Spearman_surface_Sal[1:948]
+rho_list_surface_Sal = vector("list", 948)
+for (i in 1:length(y) ){
+  rho_list_surface_Sal[[i]] = Spearman_surface_Sal[[i]]$estimate
+  names(rho_list_surface_Sal[[i]]) = names(Spearman_surface_Sal)[i]
+  Spearman_results_surface_Sal[i,2] = rho_list_surface_Sal[i]
+  Spearman_results_surface_Sal[i,1] = names(Spearman_surface_Sal[i])
+}
+
+pvalue_list_surface_Sal = vector("list", 948)
+for (i in 1:length(y) ){
+  pvalue_list_surface_Sal[[i]] = Spearman_surface_Sal[[i]]$p.value
+  names(pvalue_list_surface_Sal[[i]]) = names(Spearman_surface_Sal)[i]
+  Spearman_results_surface_Sal[i,3] = pvalue_list_surface_Sal[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_surface_Sal = subset(Spearman_results_surface_Sal, !rho == "NA")
+
+#See surprisingly many organisms at the Genus level associate with a change in oxygen at the surface. But that isn't what we want, we want to see if any change at 10m depth as this also correlates with the distance from L1 (the outermost sample).
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_surface_Sal = p.adjust(Spearman_results_noNA_surface_Sal$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_surface_df_Sal = as.data.frame(adjusted_p.value_surface_Sal)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_surface_Sal$adjusted.p.value = adjusted_p.value_surface_df_Sal$adjusted_p.value_surface_Sal
+
+#No adjusted significance, but do see non-adjusted significance
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_surface_Sal, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_surface_Sal.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_surface_Genus_Sal = subset(Spearman_results_noNA_surface_Sal, p.value < 5e-2)
+
+#Have a few significant taxa changes for adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_surface_Genus_Sal, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_surface_Genus_Sal.csv")
+
+```
+##10m
+```{r Set up df - 10m}
+
+#Export
+write.csv(Forspearman_Genus_10m_df, "Add_variables_10m.csv")
+
+#Add variables
+
+#Import
+Spearman_v2_10m_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Add_variables_10m.csv", row.names = 1, stringsAsFactors = F)
+
+Spearman_v2_10m_df = as.data.frame(lapply(Spearman_v2_10m_df[1:988], as.numeric))
+
+
+```
+```{r Carry out spearman for Salinity - 10m}
+
+#Make df to add values to.
+Spearman_results_10m_Sal = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_10m_Sal = Spearman_results_10m_Sal[1:988,1:4]
+
+Spearman_10m_Sal = lapply(Spearman_v2_10m_df, MARGIN = 2, cor.test, y = Spearman_v2_10m_df$Salinity, method = "s")
+#Set up and run loops for rho and p values.
+y=Spearman_10m_Sal[1:988]
+rho_list_10m_Sal = vector("list", 988)
+for (i in 1:length(y) ){
+  rho_list_10m_Sal[[i]] = Spearman_10m_Sal[[i]]$estimate
+  names(rho_list_10m_Sal[[i]]) = names(Spearman_10m_Sal)[i]
+  Spearman_results_10m_Sal[i,2] = rho_list_10m_Sal[i]
+  Spearman_results_10m_Sal[i,1] = names(Spearman_10m_Sal[i])
+}
+
+pvalue_list_10m_Sal = vector("list", 988)
+for (i in 1:length(y) ){
+  pvalue_list_10m_Sal[[i]] = Spearman_10m_Sal[[i]]$p.value
+  names(pvalue_list_10m_Sal[[i]]) = names(Spearman_10m_Sal)[i]
+  Spearman_results_10m_Sal[i,3] = pvalue_list_10m_Sal[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_10m_Sal = subset(Spearman_results_10m_Sal, !rho == "NA")
+
+#See no organisms at the Genus level associating with a change in salinity at 10m. 
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_10m_Sal = p.adjust(Spearman_results_noNA_10m_Sal$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_10m_df_Sal = as.data.frame(adjusted_p.value_10m_Sal)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_10m_Sal$adjusted.p.value = adjusted_p.value_10m_df_Sal$adjusted_p.value_10m
+
+#Nothing is significant if FDR corrected.
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_10m_Sal, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_10m_Sal.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_10m_Genus_Sal = subset(Spearman_results_noNA_10m_Sal, p.value < 5e-2)
+
+#No significant taxa changes for either the unadjusted or adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_10m_Genus_Sal, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_10m_Genus_Sal.csv")
+```
+##Plot Surface
+Only plotting the surface as at 10m we saw no significant micorbial changes.
+
+As we identified organisms that change significantly in relation to oxygen saturation (%), we want to plot this against the distance from L1 to visualise their pattern.
+
+```{r Significant phyloseq to df - oxygen}
+keepTaxa_FDR_surface_Sal <- onlysignificance_surface_Genus_Sal$Genus #Extract the OTU table that was shown to be significant
+
+Significant_taxa_surface_Sal <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Sal) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Sal <- tax_glom(Significant_taxa_surface_Sal, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Sal <- Significant_taxa_surface_df_Sal[order(Significant_taxa_surface_df_Sal$Phylum),] #Order them at the Phylum level
+
+#Add Distance
+##Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L1", Significant_taxa_surface_df_Sal$New_Name)] = 0
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L2", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(5.59)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L3", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(14.3)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L4", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(10.67)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L5", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(8.47)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L6", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(4.73)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L7", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(3.16)
+Significant_taxa_surface_df_Sal$Distancefrom_L1[grep("L8", Significant_taxa_surface_df_Sal$New_Name)] = as.numeric(2.47)
+
+```
+```{r Rename rare taxa}
+Significant_taxa_surface_df_Sal$Phylum <- as.character(Significant_taxa_surface_df_Sal$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_surface_Sal <- ddply(Significant_taxa_surface_df_Sal, ~Phylum, function(x) c(medians_surface_Sal=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_surface_Sal <- medians_surface_Sal[medians_surface_Sal$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_surface_df_Sal[Significant_taxa_surface_df_Sal$Phylum %in% remainder_surface_Sal,]$Phylum <- 'RareTaxa'
+
+```
+```{r Statistics - surface}
+
+Summary_surface_Sal <- summarySE(Significant_taxa_surface_df_Sal, measurevar="Abundance", groupvars=c("Phylum", "Distancefrom_L1"))
+Summary_surface_Sal
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary_surface_Sal, "Summary_surface_Sal.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary_surface_Sal<-dplyr::arrange(Summary_surface_Sal,Phylum, Abundance)
+
+
+#Save as table for ease of reading.
+write.csv(Summary_surface_Sal, file = "Ordered_summary_surface_Sal.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab", Verrucomicrobia = "tan", RareTaxa = "black")
+  
+  
+Summary_surface_plot_Sal<-ggplot(Summary_surface_Sal, 
+                        aes(x=Distancefrom_L1, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() + 
+  #facet_grid(~Sample_Depth, 
+        #     drop = TRUE, 
+         #    space = "fixed", 
+          #   scales = "free", 
+           #  margins = "TRUE", 
+            # labeller = label_wrap_gen(width = 16, multi_line = TRUE))+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Distance from the outermost sample (km)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)
+
+
+Summary_surface_plot_Sal
+
+dev.copy(png, "Significant_phylum_surface_Sal", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+```
+```{r Significant vs. non-significant - Salinity}
+
+
+
+keepTaxa_FDR_surface_Sal <- onlysignificance_surface_Genus_Sal$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_surface_Sal <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Sal) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Sal <- tax_glom(Significant_taxa_surface_Sal, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Sal <- Significant_taxa_surface_df_Sal[order(Significant_taxa_surface_df_Sal$Phylum),] #Order them at the Phylum level
+
+
+# get abundance in %
+Sample_counts_Sal <- transform_sample_counts(Fiord_phyloseq_Horonly, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Sal <- tax_glom(Sample_counts_Sal, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Sal <- psmelt(glom_Sal)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Sal$Genus <- as.character(dat_Sal$Genus)
+
+#Convert to character, as R
+Significant_taxa_Sal <- as.character(onlysignificance_surface_Genus_Sal$Genus)
+
+#Change the name of the significant organisms
+dat_Sal[dat_Sal$Genus %in% Significant_taxa_Sal,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Sal = subset(dat_Sal, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Sal[dat_Sal$Genus %!in% Significant_df_Sal,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Sal = subset(dat_Sal, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Sal = rbind(Nonsignificant_df_Sal, Significant_df_Sal)
+
+#Plot
+plotme_Sal = ggplot(plotsign.vs.nonSign_Sal,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Sal
+
+dev.copy(png, "Sign.vs.NonSign_Sal", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign_Sal$Genus))
+
+#Total number of sample
+ 40043       +     5796
+#45839
+
+#Ratio of significant
+5796/45839
+#12.6%
+
+#Ratio of non-significant
+40043/45839
+#87.4%
+```
+
+#Significant with Temperature
+##Surface
+```{r Set up df - surface}
+
+#Export
+write.csv(Forspearman_Genus_surface_df, "Add_variables_surface.csv")
+
+#Add variables
+
+#Import
+Spearman_v2_surface_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Add_variables_surface.csv", row.names = 1, stringsAsFactors = F)
+
+Spearman_v2_surface_df = as.data.frame(lapply(Spearman_v2_surface_df[1:988], as.numeric))
+
+
+```
+```{r Carry out spearman for Temperature - surface}
+
+#Make df to add values to.
+Spearman_results_surface_Temp = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_surface_Temp = Spearman_results_surface_Temp[1:988,1:4]
+
+Spearman_surface_Temp = lapply(Spearman_v2_surface_df, MARGIN = 2, cor.test, y = Spearman_v2_surface_df$Temperature, method = "s")
+#Set up and run loops for rho and p values.
+y=Spearman_surface_Temp[1:988]
+rho_list_surface_Temp = vector("list", 988)
+for (i in 1:length(y) ){
+  rho_list_surface_Temp[[i]] = Spearman_surface_Temp[[i]]$estimate
+  names(rho_list_surface_Temp[[i]]) = names(Spearman_surface_Temp)[i]
+  Spearman_results_surface_Temp[i,2] = rho_list_surface_Temp[i]
+  Spearman_results_surface_Temp[i,1] = names(Spearman_surface_Temp[i])
+}
+
+pvalue_list_surface_Temp = vector("list", 988)
+for (i in 1:length(y) ){
+  pvalue_list_surface_Temp[[i]] = Spearman_surface_Temp[[i]]$p.value
+  names(pvalue_list_surface_Temp[[i]]) = names(Spearman_surface_Temp)[i]
+  Spearman_results_surface_Temp[i,3] = pvalue_list_surface_Temp[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_surface_Temp = subset(Spearman_results_surface_Temp, !rho == "NA")
+
+#See surprisingly many organisms at the Genus level associate with a change in oxygen at the surface. But that isn't what we want, we want to see if any change at 10m depth as this also correlates with the distance from L1 (the outermost sample).
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_surface_Temp = p.adjust(Spearman_results_noNA_surface_Temp$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_surface_df_Temp = as.data.frame(adjusted_p.value_surface_Temp)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_surface_Temp$adjusted.p.value = adjusted_p.value_surface_df_Temp$adjusted_p.value_surface_Temp
+
+#No adjusted significance, but do see non-adjusted significance
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_surface_Temp, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_surface_Temp.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_surface_Genus_Temp = subset(Spearman_results_noNA_surface_Temp, p.value < 5e-2)
+
+#Have a few significant taxa changes for adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_surface_Genus_Temp, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_surface_Genus_Temp.csv")
+
+```
+##10m
+```{r Set up df - 10m}
+
+#Export
+write.csv(Forspearman_Genus_10m_df, "Add_variables_10m.csv")
+
+#Add variables
+
+#Import
+Spearman_v2_10m_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Add_variables_10m.csv", row.names = 1, stringsAsFactors = F)
+
+Spearman_v2_10m_df = as.data.frame(lapply(Spearman_v2_10m_df[1:988], as.numeric))
+
+
+```
+```{r Carry out spearman for Temperature - 10m}
+
+#Make df to add values to.
+Spearman_results_10m_Temp = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_10m_Temp = Spearman_results_10m_Temp[1:988,1:4]
+
+Spearman_10m_Temp = lapply(Spearman_v2_10m_df, MARGIN = 2, cor.test, y = Spearman_v2_10m_df$Temperature, method = "s")
+#Set up and run loops for rho and p values.
+y=Spearman_10m_Temp[1:988]
+rho_list_10m_Temp = vector("list", 988)
+for (i in 1:length(y) ){
+  rho_list_10m_Temp[[i]] = Spearman_10m_Temp[[i]]$estimate
+  names(rho_list_10m_Temp[[i]]) = names(Spearman_10m_Temp)[i]
+  Spearman_results_10m_Temp[i,2] = rho_list_10m_Temp[i]
+  Spearman_results_10m_Temp[i,1] = names(Spearman_10m_Temp[i])
+}
+
+pvalue_list_10m_Temp = vector("list", 988)
+for (i in 1:length(y) ){
+  pvalue_list_10m_Temp[[i]] = Spearman_10m_Temp[[i]]$p.value
+  names(pvalue_list_10m_Temp[[i]]) = names(Spearman_10m_Temp)[i]
+  Spearman_results_10m_Temp[i,3] = pvalue_list_10m_Temp[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_10m_Temp = subset(Spearman_results_10m_Temp, !rho == "NA")
+
+#See no organisms at the Genus level associating with a change in Temperature at 10m. 
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_10m_Temp = p.adjust(Spearman_results_noNA_10m_Temp$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_10m_df_Temp = as.data.frame(adjusted_p.value_10m_Temp)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_10m_Temp$adjusted.p.value = adjusted_p.value_10m_df_Temp$adjusted_p.value_10m
+
+#Nothing is significant if FDR corrected.
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_10m_Temp, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_10m_Temp.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_10m_Genus_Temp = subset(Spearman_results_noNA_10m_Temp, p.value < 5e-2)
+
+#No significant taxa changes for either the unadjusted or adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_10m_Genus_Temp, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_10m_Genus_Temp.csv")
+```
+##Plot Surface
+Only plotting the surface as at 10m we saw no significant micorbial changes.
+
+As we identified organisms that change significantly in relation to oxygen saturation (%), we want to plot this against the distance from L1 to visualise their pattern.
+
+```{r Significant phyloseq to df - temperature}
+keepTaxa_FDR_surface_Temp <- onlysignificance_surface_Genus_Temp$Genus #Extract the OTU table that was shown to be significant
+
+Significant_taxa_surface_Temp <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Temp) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Temp <- tax_glom(Significant_taxa_surface_Temp, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Temp <- Significant_taxa_surface_df_Temp[order(Significant_taxa_surface_df_Temp$Phylum),] #Order them at the Phylum level
+
+#Add Distance
+##Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L1", Significant_taxa_surface_df_Temp$New_Name)] = 0
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L2", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(5.59)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L3", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(14.3)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L4", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(10.67)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L5", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(8.47)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L6", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(4.73)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L7", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(3.16)
+Significant_taxa_surface_df_Temp$Distancefrom_L1[grep("L8", Significant_taxa_surface_df_Temp$New_Name)] = as.numeric(2.47)
+
+```
+```{r Rename rare taxa}
+Significant_taxa_surface_df_Temp$Phylum <- as.character(Significant_taxa_surface_df_Temp$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_surface_Temp <- ddply(Significant_taxa_surface_df_Temp, ~Phylum, function(x) c(medians_surface_Temp=mean(x$Abundance)))
+  x# find Phyla whose rel. abund. is less than 1%
+remainder_surface_Temp <- medians_surface_Temp[medians_surface_Temp$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_surface_df_Temp[Significant_taxa_surface_df_Temp$Phylum %in% remainder_surface_Temp,]$Phylum <- 'RareTaxa'
+
+#There were no rare taxa apparently
+
+```
+```{r Statistics - surface}
+
+
+Summary_surface_Temp <- summarySE(Significant_taxa_surface_df_Temp, measurevar="Abundance", groupvars=c("Phylum", "Distancefrom_L1"))
+
+Summary_surface_Temp
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary_surface_Temp, "Summary_surface_Temp.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary_surface_Temp<-dplyr::arrange(Summary_surface_Temp,Phylum, Abundance)
+
+
+#Save as table for ease of reading.
+write.csv(Summary_surface_Temp, file = "Ordered_summary_surface_Temp.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab", Verrucomicrobia = "tan", RareTaxa = "black")
+  
+  
+Summary_surface_plot_Temp<-ggplot(Summary_surface_Temp, 
+                        aes(x=Distancefrom_L1, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() + 
+  #facet_grid(~Sample_Depth, 
+        #     drop = TRUE, 
+         #    space = "fixed", 
+          #   scales = "free", 
+           #  margins = "TRUE", 
+            # labeller = label_wrap_gen(width = 16, multi_line = TRUE))+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Distance from the outermost sample (km)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)
+
+
+Summary_surface_plot_Temp
+
+dev.copy(png, "Significant_phylum_surface_Temp", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+
+
+```
+```{r Significant vs. non-significant - Temperature}
+
+
+
+keepTaxa_FDR_surface_Temp <- onlysignificance_surface_Genus_Temp$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_surface_Temp <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Temp) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Temp <- tax_glom(Significant_taxa_surface_Temp, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Temp <- Significant_taxa_surface_df_Temp[order(Significant_taxa_surface_df_Temp$Phylum),] #Order them at the Phylum level
+
+
+# get abundance in %
+Sample_counts_Temp <- transform_sample_counts(Fiord_phyloseq_Horonly, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Temp <- tax_glom(Sample_counts_Temp, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Temp <- psmelt(glom_Temp)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Temp$Genus <- as.character(dat_Temp$Genus)
+
+#Convert to character, as R
+Significant_taxa_Temp <- as.character(onlysignificance_surface_Genus_Temp$Genus)
+
+#Change the name of the significant organisms
+dat_Temp[dat_Temp$Genus %in% Significant_taxa_Temp,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Temp = subset(dat_Temp, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Temp[dat_Temp$Genus %!in% Significant_df_Temp,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Temp = subset(dat_Temp, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Temp = rbind(Nonsignificant_df_Temp, Significant_df_Temp)
+
+#Plot
+plotme_Temp = ggplot(plotsign.vs.nonSign_Temp,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Temp
+
+dev.copy(png, "Sign.vs.NonSign_Temp", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign_Temp$Genus))
+
+#Total number of sample
+ 40043      +     230
+#40273
+
+#Ratio of significant
+230/40273
+#0.57%
+
+#Ratio of non-significant
+40043/40273
+#99.4%
+
+```
+#Significant correlations between phyla
+```{r Significant correlations between phyla - mantel test}
+
+
+Bacteroidetes_df = subset(Summary_surface, Phylum == "Bacteroidetes")
+Proteobacteria_df = subset(Summary_surface, Phylum == "Proteobacteria")
+Verrucomicrobia_df = subset(Summary_surface, Phylum == "Verrucomicrobia")
+
+Bacteroidetes.dist = dist(Bacteroidetes_df[,c(2,4)])
+Proteobacteria.dist = dist(Proteobacteria_df[,c(2,4)])
+Verrucomicrobia.dist = dist(Verrucomicrobia_df[,c(2,4)])
+
+mantel(Proteobacteria.dist,
+       Bacteroidetes.dist,
+       permutations = 999)
+
+mantel(Proteobacteria.dist,
+       Verrucomicrobia.dist,
+       permutations = 999)
+
+mantel(Verrucomicrobia.dist,
+       Bacteroidetes.dist,
+       permutations = 999)
+
+
+```

@@ -1,0 +1,140 @@
+---
+title: "Figure_7"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Construct the phyloseq object as previously shown in figure 3.
+```{r Packages needed}
+library(vegan)
+library(ggplot2)
+library(microbiome)
+library(phyloseq)
+```
+```{r Subset Hor data}
+
+Fiord_phyloseq_Hor = subset_samples(Fiord_phyloseq, Sample_type == "Transverse" & !Sample_Depth == "40" & !Sample_Depth == "100" & !Sample_Depth == "200" & !Sample_Depth == "360")
+#Exclude transverse samples.
+Fiord_phyloseq_Hor
+```
+```{r Calculate α-diversity}
+
+alpha_summary_Hor <- estimate_richness(Fiord_phyloseq_Hor, measures = c("Observed", "Shannon"))
+Evenness_Hor <- evenness(Fiord_phyloseq_Hor, 'pielou')
+alpha_summary_Hor$Pielou <- Evenness_Hor$pielou
+#combine with metadata
+alpha_meta_Hor <- data.frame(alpha_summary_Hor, sample_data(Fiord_phyloseq_Hor))
+alpha_meta_Hor
+```
+#Construct the plot
+```{r Plot richness separated by depth}
+Distancefrom_l1_list = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+
+#Add distance from L1 onto df
+observedrichness_distancefrom_L1 = alpha_meta_Hor[,-c(51:86)]
+
+observedrichness_distancefrom_L1$Distancefrom_L1 = as.numeric("0")
+
+observedrichness_distancefrom_L1[1,51] = 14.3
+observedrichness_distancefrom_L1[2,51] = 8.47
+observedrichness_distancefrom_L1[3,51] = 8.47
+observedrichness_distancefrom_L1[4,51] = 5.59
+observedrichness_distancefrom_L1[5,51] = 10.67
+observedrichness_distancefrom_L1[6,51] = 14.3
+observedrichness_distancefrom_L1[7,51] = 14.3
+observedrichness_distancefrom_L1[8,51] = 14.3
+observedrichness_distancefrom_L1[9,51] = 0
+observedrichness_distancefrom_L1[10,51] = 8.47
+observedrichness_distancefrom_L1[11,51] = 2.47
+observedrichness_distancefrom_L1[12,51] = 8.47
+observedrichness_distancefrom_L1[13,51] = 3.16
+observedrichness_distancefrom_L1[14,51] = 4.73
+observedrichness_distancefrom_L1[15,51] = 10.67
+observedrichness_distancefrom_L1[16,51] = 0
+observedrichness_distancefrom_L1[17,51] = 5.59
+observedrichness_distancefrom_L1[18,51] = 0
+observedrichness_distancefrom_L1[19,51] = 4.73
+observedrichness_distancefrom_L1[20,51] = 5.59
+observedrichness_distancefrom_L1[21,51] = 5.59
+observedrichness_distancefrom_L1[22,51] = 3.17
+observedrichness_distancefrom_L1[23,51] = 0
+
+library(ggplot2)
+
+#Change facet wrap labels
+observedrichness_distancefrom_L1$Sample_Depth = as.factor(observedrichness_distancefrom_L1$Sample_Depth)
+
+levels(observedrichness_distancefrom_L1$Sample_Depth)
+levels(observedrichness_distancefrom_L1$Sample_Depth) = c("0 m", "10 m")
+
+#Get the 1 m depth to be 0, and say we're treating it as such.
+Observed_Richness_Hor_D_distance <- ggplot(observedrichness_distancefrom_L1, aes(x=Distancefrom_L1, y=Observed)) + 
+  geom_point(size=3.5) +
+  geom_smooth(method = "lm") +         
+  xlab("Sample site") +
+  #ggtitle("Sample observed richness separated by depth") +
+  labs(y = expression ("Observed Richness")) +
+  xlab("Distance from outermost sample (km)")+
+  expand_limits(y=0) +                        
+  theme_bw() +
+  facet_wrap(~Sample_Depth) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title.x = element_text(),
+        axis.text.x = element_text(angle=0, colour = "black", hjust = 0.5), 
+        axis.text.y = element_text(colour = "black"),
+        axis.title.y = element_text(face="bold"),
+        plot.title = element_text(hjust=0.5),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"),
+        strip.background = element_rect(colour="black"))
+  
+
+Observed_Richness_Hor_D_distance
+
+dev.copy(png, "Figure_3a_observed_distance", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+```{r Mantel test for observed vs. distance from L1}
+observed.dist = dist(observedrichness_distancefrom_L1$Observed)
+Distance.dist = dist(observedrichness_distancefrom_L1$Distancefrom_L1)
+mantel(observed.dist,
+       Distance.dist,
+       permutations = 9999)
+
+#Mantel r statistic = 0.02327
+  #p-value = 0.391
+
+```
+```{r Mantel - surface}
+
+Surface_richness_df = subset(observedrichness_distancefrom_L1, !Sample_Depth == "10")
+
+observed.dist_surface = dist(Surface_richness_df$Observed)
+Distance.dist_surface = dist(Surface_richness_df$Distancefrom_L1)
+mantel(observed.dist_surface,
+       Distance.dist_surface,
+       permutations = 9999)
+
+#Mantel r statistic = -0.09371
+  #p-value = 0.7031
+
+```
+```{r Mantel - 10m}
+
+D10_richness_df = subset(observedrichness_distancefrom_L1, !Sample_Depth == "0")
+
+observed.dist_D10 = dist(D10_richness_df$Observed)
+Distance.dist_D10 = dist(D10_richness_df$Distancefrom_L1)
+mantel(observed.dist_D10,
+       Distance.dist_D10,
+       permutations = 9999)
+
+#Mantel r statistic = 0.5141
+  #p-value = 0.0181
+
+```

@@ -1,0 +1,913 @@
+---
+title: "Figure_9"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Create the phyloseq object as described previously in Figure 3.
+```{r Other phyloseq objects}
+Fiord_phyloseq_Hor = subset_samples(Fiord_phyloseq, !Sample_type == "in" & !Sample_type == "out")
+Fiord_phyloseq_Hor_Surface = subset_samples(Fiord_phyloseq, Sample_type == "Transverse" &!Sample_Depth == "10" & !Sample_Depth == "40" & !Sample_Depth == "100" & !Sample_Depth == "200" & !Sample_Depth == "360")
+Fiord_phyloseq_Hor_10m = subset_samples(Fiord_phyloseq, Sample_type == "Transverse" &!Sample_Depth == "0" &!Sample_Depth == "1" & !Sample_Depth == "40" & !Sample_Depth == "100" & !Sample_Depth == "200" & !Sample_Depth == "360")
+
+```
+#Across mutliple fjords
+```{r Calculate microbial community dissimilarity}
+#Phyloseq to df
+ForBray_df_Genus <- tax_glom(Fiord_phyloseq_in_out, taxrank = 'Genus') %>%#Merge the species at the phylum level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt into a df
+
+#Subset by Depth
+Bin0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "B" & Sample_Depth == "0" & Sample_type == "in")
+Bin10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "B" & Sample_Depth == "10" & Sample_type == "in")
+Bout0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "B" & Sample_Depth == "0" & Sample_type == "out") 
+Bout10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "B" & Sample_Depth == "10" & Sample_type == "out")
+
+Cin0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "C" & Sample_Depth == "0" & Sample_type == "in")
+Cin10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "C" & Sample_Depth == "10" & Sample_type == "in")
+Cout0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "C" & Sample_Depth == "0" & Sample_type == "out") 
+Cout10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "C" & Sample_Depth == "10" & Sample_type == "out")
+
+Doin0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Do" & Sample_Depth == "0" & Sample_type == "in")
+Doin10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Do" & Sample_Depth == "10" & Sample_type == "in")
+Doout0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Do" & Sample_Depth == "0" & Sample_type == "out") 
+Doout10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Do" & Sample_Depth == "10" & Sample_type == "out")
+
+Duin0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Du" & Sample_Depth == "0" & Sample_type == "in")
+Duin10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Du" & Sample_Depth == "10" & Sample_type == "in")
+Duout0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Du" & Sample_Depth == "0" & Sample_type == "out") 
+Duout10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "Du" & Sample_Depth == "10" & Sample_type == "out")
+
+Win0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "W" & Sample_Depth == "0" & Sample_type == "in")
+Win10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "W" & Sample_Depth == "10" & Sample_type == "in")
+Wout0_df_Genus = subset(ForBray_df_Genus, Sample_Site == "W" & Sample_Depth == "0" & Sample_type == "out") 
+Wout10_df_Genus = subset(ForBray_df_Genus, Sample_Site == "W" & Sample_Depth == "10" & Sample_type == "out")
+
+
+#Extract Depth, Site, type, genus, and abundnace.
+Bin0_df_Genus = Bin0_df_Genus[,c(3,47,48,49,92)] 
+Bin10_df_Genus = Bin10_df_Genus[,c(3,47,48,49,92)]
+Bout0_df_Genus = Bout0_df_Genus[,c(3,47,48,49,92)]
+Bout10_df_Genus = Bout10_df_Genus[,c(3,47,48,49,92)]
+
+Cin0_df_Genus = Cin0_df_Genus[,c(3,47,48,49,92)] 
+Cin10_df_Genus = Cin10_df_Genus[,c(3,47,48,49,92)]
+Cout0_df_Genus = Cout0_df_Genus[,c(3,47,48,49,92)]
+Cout10_df_Genus = Cout10_df_Genus[,c(3,47,48,49,92)]
+
+Doin0_df_Genus = Doin0_df_Genus[,c(3,47,48,49,92)] 
+Doin10_df_Genus = Doin10_df_Genus[,c(3,47,48,49,92)]
+Doout0_df_Genus = Doout0_df_Genus[,c(3,47,48,49,92)]
+Doout10_df_Genus = Doout10_df_Genus[,c(3,47,48,49,92)]
+
+Duin0_df_Genus = Duin0_df_Genus[,c(3,47,48,49,92)] 
+Duin10_df_Genus = Duin10_df_Genus[,c(3,47,48,49,92)]
+Duout0_df_Genus = Duout0_df_Genus[,c(3,47,48,49,92)]
+Duout10_df_Genus = Duout10_df_Genus[,c(3,47,48,49,92)]
+
+Win0_df_Genus = Win0_df_Genus[,c(3,47,48,49,92)] 
+Win10_df_Genus = Win10_df_Genus[,c(3,47,48,49,92)]
+Wout0_df_Genus = Wout0_df_Genus[,c(3,47,48,49,92)]
+Wout10_df_Genus = Wout10_df_Genus[,c(3,47,48,49,92)]
+
+
+#Transpose data
+trans_Bin0_df_Genus = as.data.frame(t(Bin0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Bin0_df_Genus) = Bin0_df_Genus$Genus
+trans_Bin10_df_Genus = as.data.frame(t(Bin10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Bin10_df_Genus) = Bin10_df_Genus$Genus
+trans_Bout0_df_Genus = as.data.frame(t(Bout0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Bout0_df_Genus) = Bout0_df_Genus$Genus
+trans_Bout10_df_Genus = as.data.frame(t(Bout10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Bout10_df_Genus) = Bout10_df_Genus$Genus
+
+trans_Cin0_df_Genus = as.data.frame(t(Cin0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Cin0_df_Genus) = Cin0_df_Genus$Genus
+trans_Cin10_df_Genus = as.data.frame(t(Cin10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Cin10_df_Genus) = Cin10_df_Genus$Genus
+trans_Cout0_df_Genus = as.data.frame(t(Cout0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Cout0_df_Genus) = Cout0_df_Genus$Genus
+trans_Cout10_df_Genus = as.data.frame(t(Cout10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Cout10_df_Genus) = Cout10_df_Genus$Genus
+
+trans_Doin0_df_Genus = as.data.frame(t(Doin0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Doin0_df_Genus) = Doin0_df_Genus$Genus
+trans_Doin10_df_Genus = as.data.frame(t(Doin10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Doin10_df_Genus) = Doin10_df_Genus$Genus
+trans_Doout0_df_Genus = as.data.frame(t(Doout0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Doout0_df_Genus) = Doout0_df_Genus$Genus
+trans_Doout10_df_Genus = as.data.frame(t(Doout10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Doout10_df_Genus) = Doout10_df_Genus$Genus
+
+trans_Duin0_df_Genus = as.data.frame(t(Duin0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Duin0_df_Genus) = Duin0_df_Genus$Genus
+trans_Duin10_df_Genus = as.data.frame(t(Duin10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Duin10_df_Genus) = Duin10_df_Genus$Genus
+trans_Duout0_df_Genus = as.data.frame(t(Duout0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Duout0_df_Genus) = Duout0_df_Genus$Genus
+trans_Duout10_df_Genus = as.data.frame(t(Duout10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Duout10_df_Genus) = Duout10_df_Genus$Genus
+
+trans_Win0_df_Genus = as.data.frame(t(Win0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Win0_df_Genus) = Win0_df_Genus$Genus
+trans_Win10_df_Genus = as.data.frame(t(Win10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Win10_df_Genus) = Win10_df_Genus$Genus
+trans_Wout0_df_Genus = as.data.frame(t(Wout0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Wout0_df_Genus) = Wout0_df_Genus$Genus
+trans_Wout10_df_Genus = as.data.frame(t(Wout10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_Wout10_df_Genus) = Wout10_df_Genus$Genus
+
+#Get mean at Genus level
+Bin0_Genus_mean = as.data.frame(sapply(split.default(trans_Bin0_df_Genus, names(trans_Bin0_df_Genus)), rowMeans))
+Bin10_Genus_mean = as.data.frame(sapply(split.default(trans_Bin10_df_Genus, names(trans_Bin10_df_Genus)), rowMeans))
+Bout0_Genus_mean = as.data.frame(sapply(split.default(trans_Bout0_df_Genus, names(trans_Bout0_df_Genus)), rowMeans))
+Bout10_Genus_mean = as.data.frame(sapply(split.default(trans_Bout10_df_Genus, names(trans_Bout10_df_Genus)), rowMeans))
+
+Cin0_Genus_mean = as.data.frame(sapply(split.default(trans_Cin0_df_Genus, names(trans_Cin0_df_Genus)), rowMeans))
+Cin10_Genus_mean = as.data.frame(sapply(split.default(trans_Cin10_df_Genus, names(trans_Cin10_df_Genus)), rowMeans))
+Cout0_Genus_mean = as.data.frame(sapply(split.default(trans_Cout0_df_Genus, names(trans_Cout0_df_Genus)), rowMeans))
+Cout10_Genus_mean = as.data.frame(sapply(split.default(trans_Cout10_df_Genus, names(trans_Cout10_df_Genus)), rowMeans))
+
+Doin0_Genus_mean = as.data.frame(sapply(split.default(trans_Doin0_df_Genus, names(trans_Doin0_df_Genus)), rowMeans))
+Doin10_Genus_mean = as.data.frame(sapply(split.default(trans_Doin10_df_Genus, names(trans_Doin10_df_Genus)), rowMeans))
+Doout0_Genus_mean = as.data.frame(sapply(split.default(trans_Doout0_df_Genus, names(trans_Doout0_df_Genus)), rowMeans))
+Doout10_Genus_mean = as.data.frame(sapply(split.default(trans_Doout10_df_Genus, names(trans_Doout10_df_Genus)), rowMeans))
+
+Duin0_Genus_mean = as.data.frame(sapply(split.default(trans_Duin0_df_Genus, names(trans_Duin0_df_Genus)), rowMeans))
+Duin10_Genus_mean = as.data.frame(sapply(split.default(trans_Duin10_df_Genus, names(trans_Duin10_df_Genus)), rowMeans))
+Duout0_Genus_mean = as.data.frame(sapply(split.default(trans_Duout0_df_Genus, names(trans_Duout0_df_Genus)), rowMeans))
+Duout10_Genus_mean = as.data.frame(sapply(split.default(trans_Duout10_df_Genus, names(trans_Duout10_df_Genus)), rowMeans))
+
+Win0_Genus_mean = as.data.frame(sapply(split.default(trans_Win0_df_Genus, names(trans_Win0_df_Genus)), rowMeans))
+Win10_Genus_mean = as.data.frame(sapply(split.default(trans_Win10_df_Genus, names(trans_Win10_df_Genus)), rowMeans))
+Wout0_Genus_mean = as.data.frame(sapply(split.default(trans_Wout0_df_Genus, names(trans_Wout0_df_Genus)), rowMeans))
+Wout10_Genus_mean = as.data.frame(sapply(split.default(trans_Wout10_df_Genus, names(trans_Wout10_df_Genus)), rowMeans))
+
+#Bind into one df
+ForBray_Genus_df_num = rbind(Bin0_Genus_mean, 
+                         Bin10_Genus_mean, 
+                         Bout0_Genus_mean,
+                         Bout10_Genus_mean, 
+                         Cin0_Genus_mean, 
+                         Cin10_Genus_mean, 
+                         Cout0_Genus_mean,
+                         Cout10_Genus_mean,
+                         Doin0_Genus_mean, 
+                         Doin10_Genus_mean, 
+                         Doout0_Genus_mean,
+                         Doout10_Genus_mean,
+                         Duin0_Genus_mean, 
+                         Duin10_Genus_mean, 
+                         Duout0_Genus_mean,
+                         Duout10_Genus_mean,
+                         Win0_Genus_mean, 
+                         Win10_Genus_mean, 
+                         Wout0_Genus_mean,
+                         Wout10_Genus_mean)
+
+
+#Remove excess rows
+ForBray_Genus_df_num = ForBray_Genus_df_num[-c(2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40),]
+
+ForBray_Genus_df = ForBray_Genus_df_num
+
+#Add sample depth as a column
+ForBray_Genus_df$Sample_Depth = c(0,10,0,10,0,10,0,10,0,10,
+                                      0,10,0,10,0,10,0,10,0,10)
+ForBray_Genus_df$Sample_type = as.factor(c("in","in","out","out",
+                                           "in","in","out","out",
+                                           "in","in","out","out",
+                                           "in","in","out","out",
+                                           "in","in","out","out"))
+ForBray_Genus_df$Sample_Site = as.factor(c("B","B","B","B",
+                                           "C","C","C","C",
+                                           "Do","Do","Do","Do",
+                                           "Du","Du","Du","Du",
+                                           "W","W","W","W"))
+
+```
+```{r Carry out micro Bray}
+Bray_micro = vegdist(ForBray_Genus_df_num, method = "bray", binary = TRUE)
+Bray_micro
+
+#Export and add sample sites in the same order.
+write.csv(as.matrix(Bray_micro),file =
+                "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2/Bray_Allmicro.csv")
+
+
+#Import the new dataframe with the bray distances
+Bray_df_micro_type = read.csv("/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2/Brayplot_allmicro_inout.csv")
+Bray_df_micro_depth = read.csv("/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2/Brayplot_allmicro_depth.csv")
+
+
+```
+```{r Plot microbial Bray}
+#Carry out the boxplot
+braydepth_boxallmicro = ggplot(Bray_df_micro_depth, aes(y=Bray_Distance, x=Sample_type)) + 
+  geom_boxplot() +
+  xlab("Sample Region")+
+  ylab("Bray-Curtis Distance")+
+  ylim(0,0.7)
+
+#Display the plot
+braydepth_boxallmicro
+
+dev.copy(png,"Bray_dist_depthdiss_allmicro",width = 300, height = 300)
+dev.off()
+
+#Carry out the boxplot
+braytype_boxallmicro = ggplot(Bray_df_micro_type, aes(y=Bray_Distance, x=as.factor(Depth))) + 
+  geom_boxplot() +
+  xlab("Sample Depth (m)")+
+  ylab("Bray-Curtis Distance")+
+  ylim(0,0.7)
+
+#Display the plot
+braytype_boxallmicro
+
+dev.copy(png,"Bray_dist_typediss_allmicro",width = 300, height = 300)
+dev.off()
+
+```
+##Statistics
+```{r Microbial community}
+write.csv(ForBray_Genus_df, "All_micro.csv")
+
+#Make distance matrix:
+Allmicrobes_adonis.dist = dist(cbind(ForBray_Genus_df[,c(1:947)]))
+
+library(vegan)
+adonis(Allmicrobes_adonis.dist~
+              Sample_Depth,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_type,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_Site,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_Depth *
+                Sample_type,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_Depth *
+                Sample_Site,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_type *
+                Sample_Site,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_Depth *
+                Sample_type *
+         Sample_Site,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              Sample_Depth *
+                Sample_type *
+         Sample_Site,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+```
+
+
+#Across Long Sound
+
+```{r Bray - use the first surface as a reference for everything else}
+
+#Import the bray distance df
+Firstref_bray_Microbiome_df = read.csv("Firstref_bray_Microbiome_df.csv", row.names = 1)
+
+#Add Sample Depth as column
+
+Firstref_bray_Microbiome_df$Sample_Depth = NA
+
+Firstref_bray_Microbiome_df[1,2] = 0
+Firstref_bray_Microbiome_df[2,2] = 10
+Firstref_bray_Microbiome_df[3,2] = 0
+Firstref_bray_Microbiome_df[4,2] = 10
+Firstref_bray_Microbiome_df[5,2] = 0
+Firstref_bray_Microbiome_df[6,2] = 10
+Firstref_bray_Microbiome_df[7,2] = 0
+Firstref_bray_Microbiome_df[8,2] = 0
+Firstref_bray_Microbiome_df[9,2] = 10
+Firstref_bray_Microbiome_df[10,2] = 0
+Firstref_bray_Microbiome_df[11,2] = 0
+Firstref_bray_Microbiome_df[12,2] = 0
+
+#Make a df with distances from reference - this was calculated using an online calculator and the coordinates from the GPS gatehred during sampling.
+Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+
+#Add distance from reference as column
+Firstref_bray_Microbiome_df$Distancefrom_L1 = NA
+
+#Add distances according to this list
+as.data.frame(Distance_list_surface)
+
+Firstref_bray_Microbiome_df[1,3] = 0
+Firstref_bray_Microbiome_df[2,3] = 0
+Firstref_bray_Microbiome_df[3,3] = 5.59
+Firstref_bray_Microbiome_df[4,3] = 5.59
+Firstref_bray_Microbiome_df[5,3] = 14.3
+Firstref_bray_Microbiome_df[6,3] = 14.3
+Firstref_bray_Microbiome_df[7,3] = 10.67
+Firstref_bray_Microbiome_df[8,3] = 8.47
+Firstref_bray_Microbiome_df[9,3] = 8.47
+Firstref_bray_Microbiome_df[10,3] = 4.73
+Firstref_bray_Microbiome_df[11,3] = 3.16
+Firstref_bray_Microbiome_df[12,3] = 2.47
+
+#Exclude samples comapring surface to 10m
+Surface_reference_Microbiome = subset(Firstref_bray_Microbiome_df, Sample_Depth == "0")
+
+#Import the df when we used the L1 10m sample as a reference.
+D10_Microbiome_ref = read.csv("Microbiome_bray_df.csv", row.names = 1)
+D10_Microbiome_ref = D10_Microbiome_ref[,-c(3:12)]
+
+D10_Microbiome_ref$Sample_Depth = NA
+
+D10_Microbiome_ref[1,3] = 0
+D10_Microbiome_ref[2,3] = 10
+D10_Microbiome_ref[3,3] = 0
+D10_Microbiome_ref[4,3] = 10
+D10_Microbiome_ref[5,3] = 0
+D10_Microbiome_ref[6,3] = 10
+D10_Microbiome_ref[7,3] = 0
+D10_Microbiome_ref[8,3] = 0
+D10_Microbiome_ref[9,3] = 10
+D10_Microbiome_ref[10,3] = 0
+D10_Microbiome_ref[11,3] = 0
+D10_Microbiome_ref[12,3] = 0
+
+#Add distance from reference as column
+D10_Microbiome_ref$Distancefrom_L1 = NA
+
+#Add distances according to this list
+as.data.frame(Distance_list_surface)
+
+D10_Microbiome_ref[1,4] = 0
+D10_Microbiome_ref[2,4] = 0
+D10_Microbiome_ref[3,4] = 5.59
+D10_Microbiome_ref[4,4] = 5.59
+D10_Microbiome_ref[5,4] = 14.3
+D10_Microbiome_ref[6,4] = 14.3
+D10_Microbiome_ref[7,4] = 10.67
+D10_Microbiome_ref[8,4] = 8.47
+D10_Microbiome_ref[9,4] = 8.47
+D10_Microbiome_ref[10,4] = 4.73
+D10_Microbiome_ref[11,4] = 3.16
+D10_Microbiome_ref[12,4] = 2.47
+
+
+
+#Exclude samples comparing 10m to surface
+D10_reference_Microbiome = subset(D10_Microbiome_ref, Sample_Depth == "10")
+D10_reference_Microbiome = D10_reference_Microbiome[,-c(1)]
+colnames(D10_reference_Microbiome)[1] = "Bray_Distance"
+
+
+
+#Join the two dfs together.
+Both_Microbiome_ref_df = rbind(Surface_reference_Microbiome, D10_reference_Microbiome)
+
+
+First_ref_Microbiome_plot = ggplot(Both_Microbiome_ref_df, 
+                               aes(y = Bray_Distance, 
+                                   x= Distancefrom_L1,
+                                   colour = as.factor(Sample_Depth))) +
+  geom_smooth(method = "lm")+
+  geom_point()+
+  xlab("Distance from the \n outermost sample (km)")+
+  ylab("Bray-Curtis distance between \n microbial communities")+
+  labs(colour = "Sample Depth \n(m)")
+
+First_ref_Microbiome_plot
+dev.copy(png, "Firstref_Microbiome_bray", units = "in", width = 4, height = 3.2, res = 500)
+dev.off()
+
+```
+
+```{r Spearman}
+
+#Use original dataframe
+Microbiome_surface_spearman = cor(Microbiome_surface_df, method = "spearman")
+ 
+
+#Use Bray-distance not raw data
+Microbiome_surface_spearman = cor(Surface_reference_Microbiome, method = "spearman")
+#rho = 0.0238 for Distance vs. Bray
+
+Microbiome_D10_spearman = cor(D10_reference_Microbiome, method = "spearman")
+#rho = 1 for Distance vs. Bray - most likely because there isn't enough data.
+
+Microbiome_spearman = cor(Both_Microbiome_ref_df[,-1], method = "spearman")
+Microbiome_spearman
+#rho = 0.3986
+```
+
+```{r p-value at surface}
+
+#Add distances according to this list
+Microbiome_surface_df= data.frame(lapply(Microbiome_mantel_surface_df, as.numeric), stringsAsFactors = T)#Extract data in the form of numeric values.
+rownames(Microbiome_surface_df) = rownames(Microbiome_mantel_surface_df)  #Make sure rownames are attached for easier identification
+
+as.data.frame(Distance_list_surface)
+
+Microbiome_surface_df[1,62] = 0
+Microbiome_surface_df[2,62] = 5.59
+Microbiome_surface_df[3,62] = 14.3
+Microbiome_surface_df[4,62] = 10.67
+Microbiome_surface_df[5,62] = 8.47
+Microbiome_surface_df[6,62] = 4.73
+Microbiome_surface_df[7,62] = 3.16
+Microbiome_surface_df[8,62] = 2.47
+
+colnames(Microbiome_surface_df)[62] = "Distancefrom_L1"
+
+
+#Adonis test
+Microbiome_adonis_distance_surface = adonis(Microbiome_surface.dist ~
+                                       Distancefrom_L1,
+                           data = Microbiome_surface_df,
+                           permutations = 999
+                           )
+Microbiome_adonis_distance_surface
+#0.03
+#0.69
+
+#Import modified Microbiome mantel df.
+Microbiome_mantel_surface_df = read.csv("Microbiome_surface_df_mantel.csv", row.names = 1)
+#Make CTD distance object
+Microbiome_surface.dist = dist(cbind(Microbiome_mantel_surface_df$AEGEAN__169_marine_group,	
+                             Microbiome_mantel_surface_df$Ambiguous_taxa,
+                             Microbiome_mantel_surface_df$Ascidiaceihabitans,
+                             Microbiome_mantel_surface_df$Candidatus_Actinomarina,
+                             Microbiome_mantel_surface_df$Candidatus_Nitrosopelagicus,
+                             Microbiome_mantel_surface_df$Candidatus_Nitrosopumilus,
+                             Microbiome_mantel_surface_df$CL500__3,
+                             Microbiome_mantel_surface_df$Coxiella,
+                             Microbiome_mantel_surface_df$Fluviicola,
+                             Microbiome_mantel_surface_df$Formosa,
+                             Microbiome_mantel_surface_df$Halocynthiibacter,
+                             Microbiome_mantel_surface_df$Hellea,
+                             Microbiome_mantel_surface_df$Ketogulonicigenium,
+                             Microbiome_mantel_surface_df$Lewinella,
+                             Microbiome_mantel_surface_df$Luminiphilus,
+                             Microbiome_mantel_surface_df$marine_metagenome,
+                             Microbiome_mantel_surface_df$NS3a_marine_group,
+                             Microbiome_mantel_surface_df$NS4_marine_group,
+                             Microbiome_mantel_surface_df$NS5_marine_group,
+                             Microbiome_mantel_surface_df$OM43_clade,
+                             Microbiome_mantel_surface_df$OM60.NOR5._clade,
+                             Microbiome_mantel_surface_df$Persicirhabdus,
+                             Microbiome_mantel_surface_df$Planctomyces,
+                             Microbiome_mantel_surface_df$Polynucleobacter,
+                             Microbiome_mantel_surface_df$Prochlorococcus,
+                             Microbiome_mantel_surface_df$Profundibacterium,
+                             Microbiome_mantel_surface_df$Pseudohongiella,
+                             Microbiome_mantel_surface_df$Roseibacillus,
+                             Microbiome_mantel_surface_df$Rubripirellula,
+                             Microbiome_mantel_surface_df$Synechococcus,
+                             Microbiome_mantel_surface_df$Ulvibacter,
+                             Microbiome_mantel_surface_df$uncultured,
+                             Microbiome_mantel_surface_df$uncultured_actinobacterium,
+                             Microbiome_mantel_surface_df$uncultured_alpha_proteobacterium,
+                             Microbiome_mantel_surface_df$uncultured_bacterium,
+                             Microbiome_mantel_surface_df$uncultured_gamma_proteobacterium,
+                             Microbiome_mantel_surface_df$uncultured_marine_bacterium,
+                             Microbiome_mantel_surface_df$uncultured_organism,
+                             Microbiome_mantel_surface_df$Site,
+                             Microbiome_mantel_surface_df$Depth))
+Hor_Ecolog_surf_mantel_df = read.csv("Ecolog_hor_surface_df.csv", row.names = 1)
+#Make Ecolog distance object
+Ecolog_surface.dist = dist(cbind(Hor_Ecolog_surf_mantel_df$beta_Methyl_D_Glucoside,
+                            Hor_Ecolog_surf_mantel_df$DGalactonic_Acid_gamma_Lactone,
+                            Hor_Ecolog_surf_mantel_df$LArginine,
+                            Hor_Ecolog_surf_mantel_df$Pyruvic_Acid_Methyl_Ester,
+                            Hor_Ecolog_surf_mantel_df$DXylose,
+                            Hor_Ecolog_surf_mantel_df$DGalacturonic_Acid,
+                            Hor_Ecolog_surf_mantel_df$LAsparagine,
+                            Hor_Ecolog_surf_mantel_df$Tween_40,
+                            Hor_Ecolog_surf_mantel_df$i_Erythritol,
+                            Hor_Ecolog_surf_mantel_df$X2_Hydroxy_Benzoic_Acid,
+                            Hor_Ecolog_surf_mantel_df$L_Phenylalanine,
+                            Hor_Ecolog_surf_mantel_df$Tween_80,
+                            Hor_Ecolog_surf_mantel_df$DMannitol,
+                            Hor_Ecolog_surf_mantel_df$X4Hydroxy_Benzoic_Acid, 
+                            Hor_Ecolog_surf_mantel_df$LSerine, 
+                            Hor_Ecolog_surf_mantel_df$alpha_Cyclodextrin, 
+                            Hor_Ecolog_surf_mantel_df$Nacetyl_DGlucosamine, 
+                            Hor_Ecolog_surf_mantel_df$gamma_Hydroxybutyric_Acid, 
+                            Hor_Ecolog_surf_mantel_df$L_Threonine, 
+                            Hor_Ecolog_surf_mantel_df$Glycogen, 
+                            Hor_Ecolog_surf_mantel_df$DGlucosaminic_Acid, 
+                            Hor_Ecolog_surf_mantel_df$Itaconic_Acid, 
+                            Hor_Ecolog_surf_mantel_df$Glycyl_LGlutamic_Acid, 
+                            Hor_Ecolog_surf_mantel_df$DCellobiose, 
+                            Hor_Ecolog_surf_mantel_df$Glucos_1Phosphate, 
+                            Hor_Ecolog_surf_mantel_df$alpha_Ketobutyric_Acid, 
+                            Hor_Ecolog_surf_mantel_df$Phenylethyl_amine, 
+                            Hor_Ecolog_surf_mantel_df$alpha_DLactose, 
+                            Hor_Ecolog_surf_mantel_df$DL_alpha_Glycerol_Phosphate, 
+                            Hor_Ecolog_surf_mantel_df$Phenylethyl_amine, 
+                            Hor_Ecolog_surf_mantel_df$alpha_DLactose, 
+                            Hor_Ecolog_surf_mantel_df$DL_alpha_Glycerol_Phosphate, 
+                            Hor_Ecolog_surf_mantel_df$DMalic_Acid, 
+                            Hor_Ecolog_surf_mantel_df$Putrescine))
+mantel(Microbiome_surface.dist,
+               Ecolog_surface.dist)
+
+Ecolog_bray = vegdist(Ecolog_bray_df, method = "bray", binary = T)
+CTD_bray_df_variables = read.csv("Bray_CTD_df_setup.csv", row.names = 1)
+CTD_bray_df = CTD_bray_df_variables[,-c(4,5)]
+CTD_bray = vegdist(CTD_bray_df, method = "bray", binary = F)
+CTD_df_bray = as.matrix(CTD_bray)
+CTD_mantel = as.dist(CTD_df_bray[c(1:7,9:11,13,15),c(1:7,9:11,13,15)])
+Ecolog_bray_df_variables = read.csv("Bray_Ecolog_df_setup.csv", row.names = 1)
+mantel(Ecolog_bray,
+       CTD_mantel)
+
+#Import modified Microbiome mantel df.
+Hor_Microbiome_mantel_df = read.csv("Hor_Microbiome_mantel_df.csv", row.names = 1)
+#Make CTD distance object
+Microbiome.dist = dist(cbind(Hor_Microbiome_mantel_df$AEGEAN__169_marine_group,	
+                             Hor_Microbiome_mantel_df$Ambiguous_taxa,
+                             Hor_Microbiome_mantel_df$Ascidiaceihabitans,
+                             Hor_Microbiome_mantel_df$Candidatus_Actinomarina,
+                             Hor_Microbiome_mantel_df$Candidatus_Nitrosopelagicus,
+                             Hor_Microbiome_mantel_df$Candidatus_Nitrosopumilus,
+                             Hor_Microbiome_mantel_df$CL500__3,
+                             Hor_Microbiome_mantel_df$Coxiella,
+                             Hor_Microbiome_mantel_df$Fluviicola,
+                             Hor_Microbiome_mantel_df$Formosa,
+                             Hor_Microbiome_mantel_df$Halocynthiibacter,
+                             Hor_Microbiome_mantel_df$Hellea,
+                             Hor_Microbiome_mantel_df$Ketogulonicigenium,
+                             Hor_Microbiome_mantel_df$Lewinella,
+                             Hor_Microbiome_mantel_df$Luminiphilus,
+                             Hor_Microbiome_mantel_df$marine_metagenome,
+                             Hor_Microbiome_mantel_df$NS3a_marine_group,
+                             Hor_Microbiome_mantel_df$NS4_marine_group,
+                             Hor_Microbiome_mantel_df$NS5_marine_group,
+                             Hor_Microbiome_mantel_df$OM43_clade,
+                             Hor_Microbiome_mantel_df$OM60.NOR5._clade,
+                             Hor_Microbiome_mantel_df$Persicirhabdus,
+                             Hor_Microbiome_mantel_df$Planctomyces,
+                             Hor_Microbiome_mantel_df$Polynucleobacter,
+                             Hor_Microbiome_mantel_df$Prochlorococcus,
+                             Hor_Microbiome_mantel_df$Profundibacterium,
+                             Hor_Microbiome_mantel_df$Pseudohongiella,
+                             Hor_Microbiome_mantel_df$Roseibacillus,
+                             Hor_Microbiome_mantel_df$Rubripirellula,
+                             Hor_Microbiome_mantel_df$Synechococcus,
+                             Hor_Microbiome_mantel_df$Ulvibacter,
+                             Hor_Microbiome_mantel_df$uncultured,
+                             Hor_Microbiome_mantel_df$uncultured_actinobacterium,
+                             Hor_Microbiome_mantel_df$uncultured_alpha_proteobacterium,
+                             Hor_Microbiome_mantel_df$uncultured_bacterium,
+                             Hor_Microbiome_mantel_df$uncultured_gamma_proteobacterium,
+                             Hor_Microbiome_mantel_df$uncultured_marine_bacterium,
+                             Hor_Microbiome_mantel_df$uncultured_organism,
+                             Hor_Microbiome_mantel_df$Site,
+                             Hor_Microbiome_mantel_df$Depth))
+mantel(Microbiome.dist,
+               CTD_mantel)
+mantel(Microbiome_surface.dist,
+       CTD_surface_mantel.dist)
+
+```
+```{r p-value at 10m}
+
+#Import modified Microbiome mantel df.
+Microbiome_mantel_10m_df = read.csv("Microbiome_10m_df_mantel.csv", row.names = 1)
+
+library(ade4)
+#Make location distance object - Site = station in Fjord
+Microbiome_10m_location.dist = dist(cbind(Microbiome_mantel_10m_df$Site))
+
+#Make distance object
+Microbiome_10m.dist = dist(cbind(Microbiome_mantel_10m_df$AEGEAN__169_marine_group,	
+                             Microbiome_mantel_10m_df$Ambiguous_taxa,
+                             Microbiome_mantel_10m_df$Ascidiaceihabitans,
+                             Microbiome_mantel_10m_df$Candidatus_Actinomarina,
+                             Microbiome_mantel_10m_df$Candidatus_Nitrosopelagicus,
+                             Microbiome_mantel_10m_df$Candidatus_Nitrosopumilus,
+                             Microbiome_mantel_10m_df$CL500__3,
+                             Microbiome_mantel_10m_df$Coxiella,
+                             Microbiome_mantel_10m_df$Fluviicola,
+                             Microbiome_mantel_10m_df$Formosa,
+                             Microbiome_mantel_10m_df$Halocynthiibacter,
+                             Microbiome_mantel_10m_df$Hellea,
+                             Microbiome_mantel_10m_df$Ketogulonicigenium,
+                             Microbiome_mantel_10m_df$Lewinella,
+                             Microbiome_mantel_10m_df$Luminiphilus,
+                             Microbiome_mantel_10m_df$marine_metagenome,
+                             Microbiome_mantel_10m_df$NS3a_marine_group,
+                             Microbiome_mantel_10m_df$NS4_marine_group,
+                             Microbiome_mantel_10m_df$NS5_marine_group,
+                             Microbiome_mantel_10m_df$OM43_clade,
+                             Microbiome_mantel_10m_df$OM60.NOR5._clade,
+                             Microbiome_mantel_10m_df$Persicirhabdus,
+                             Microbiome_mantel_10m_df$Planctomyces,
+                             Microbiome_mantel_10m_df$Polynucleobacter,
+                             Microbiome_mantel_10m_df$Prochlorococcus,
+                             Microbiome_mantel_10m_df$Profundibacterium,
+                             Microbiome_mantel_10m_df$Pseudohongiella,
+                             Microbiome_mantel_10m_df$Roseibacillus,
+                             Microbiome_mantel_10m_df$Rubripirellula,
+                             Microbiome_mantel_10m_df$Synechococcus,
+                             Microbiome_mantel_10m_df$Ulvibacter,
+                             Microbiome_mantel_10m_df$uncultured,
+                             Microbiome_mantel_10m_df$uncultured_actinobacterium,
+                             Microbiome_mantel_10m_df$uncultured_alpha_proteobacterium,
+                             Microbiome_mantel_10m_df$uncultured_bacterium,
+                             Microbiome_mantel_10m_df$uncultured_gamma_proteobacterium,
+                             Microbiome_mantel_10m_df$uncultured_marine_bacterium,
+                             Microbiome_mantel_10m_df$uncultured_organism,
+                             Microbiome_mantel_10m_df$Site,
+                             Microbiome_mantel_10m_df$Depth))
+
+#Add distances according to this list
+Microbiome_10m_df= data.frame(lapply(Microbiome_mantel_10m_df, as.numeric), stringsAsFactors = T)#Extract data in the form of numeric values.
+rownames(Microbiome_10m_df) = rownames(Microbiome_mantel_10m_df)  #Make sure rownames are attached for easier identification
+
+as.data.frame(Distance_list_surface)
+
+Microbiome_10m_df[1,62] = 0
+Microbiome_10m_df[2,62] = 5.59
+Microbiome_10m_df[3,62] = 14.3
+Microbiome_10m_df[4,62] = 8.47
+
+colnames(Microbiome_10m_df)[62] = "Distancefrom_L1"
+
+
+#Adonis test
+Microbiome_adonis_distance_10m = adonis(Microbiome_10m.dist ~
+                                       Distancefrom_L1,
+                           data = Microbiome_10m_df,
+                           permutations = 999
+                           )
+Microbiome_adonis_distance_10m #0.55, 0.33
+library(ade4)
+library(vegan)
+
+                          
+
+Hor_Ecolog_10m_mantel_df = read.csv("Ecolog_hor_10m_df.csv", row.names = 1)
+#Make Ecolog distance object
+Ecolog_10m.dist = dist(cbind(Hor_Ecolog_10m_mantel_df$beta_Methyl_D_Glucoside,
+                            Hor_Ecolog_10m_mantel_df$DGalactonic_Acid_gamma_Lactone,
+                            Hor_Ecolog_10m_mantel_df$LArginine,
+                            Hor_Ecolog_10m_mantel_df$Pyruvic_Acid_Methyl_Ester,
+                            Hor_Ecolog_10m_mantel_df$DXylose,
+                            Hor_Ecolog_10m_mantel_df$DGalacturonic_Acid,
+                            Hor_Ecolog_10m_mantel_df$LAsparagine,
+                            Hor_Ecolog_10m_mantel_df$Tween_40,
+                            Hor_Ecolog_10m_mantel_df$i_Erythritol,
+                            Hor_Ecolog_10m_mantel_df$X2_Hydroxy_Benzoic_Acid,
+                            Hor_Ecolog_10m_mantel_df$L_Phenylalanine,
+                            Hor_Ecolog_10m_mantel_df$Tween_80,
+                            Hor_Ecolog_10m_mantel_df$DMannitol,
+                            Hor_Ecolog_10m_mantel_df$X4Hydroxy_Benzoic_Acid, 
+                            Hor_Ecolog_10m_mantel_df$LSerine, 
+                            Hor_Ecolog_10m_mantel_df$alpha_Cyclodextrin, 
+                            Hor_Ecolog_10m_mantel_df$Nacetyl_DGlucosamine, 
+                            Hor_Ecolog_10m_mantel_df$gamma_Hydroxybutyric_Acid, 
+                            Hor_Ecolog_10m_mantel_df$L_Threonine, 
+                            Hor_Ecolog_10m_mantel_df$Glycogen, 
+                            Hor_Ecolog_10m_mantel_df$DGlucosaminic_Acid, 
+                            Hor_Ecolog_10m_mantel_df$Itaconic_Acid, 
+                            Hor_Ecolog_10m_mantel_df$Glycyl_LGlutamic_Acid, 
+                            Hor_Ecolog_10m_mantel_df$DCellobiose, 
+                            Hor_Ecolog_10m_mantel_df$Glucos_1Phosphate, 
+                            Hor_Ecolog_10m_mantel_df$alpha_Ketobutyric_Acid, 
+                            Hor_Ecolog_10m_mantel_df$Phenylethyl_amine, 
+                            Hor_Ecolog_10m_mantel_df$alpha_DLactose, 
+                            Hor_Ecolog_10m_mantel_df$DL_alpha_Glycerol_Phosphate, 
+                            Hor_Ecolog_10m_mantel_df$Phenylethyl_amine, 
+                            Hor_Ecolog_10m_mantel_df$alpha_DLactose, 
+                            Hor_Ecolog_10m_mantel_df$DL_alpha_Glycerol_Phosphate, 
+                            Hor_Ecolog_10m_mantel_df$DMalic_Acid, 
+                            Hor_Ecolog_10m_mantel_df$Putrescine))
+          
+mantel(Microbiome_10m.dist,
+               Ecolog_10m.dist)
+mantel(Microbiome.dist,
+               CTD_mantel)
+
+Hor_CTD_mantel_df = read.csv("Hor_CTD_mantel_df.csv", row.names = 1)
+CTD_10m_mantel_df = Hor_CTD_mantel_df[c(2,4,6,8,10,12,14,16),]
+CTD_10m_mantel_proper.dist = dist(cbind(CTD_10m_mantel_df$Temperature[c(1,2,3,5)],
+                            CTD_10m_mantel_df$Salinity[c(1,2,3,5)],
+                            CTD_10m_mantel_df$OxygenPerSat[c(1,2,3,5)]))
+mantel(Microbiome_10m.dist,
+       CTD_10m_mantel_proper.dist)
+
+
+Ecolog_bray_df = Ecolog_bray_df_variables[,-c(32,33)]
+
+
+mantel(Ecolog_bray,
+       CTD_mantel)
+```
+
+#Export alpha-meta file for use in alpha-diversity
+
+```{r Export alpha-meta file for use in alpha-diversity}
+
+#Import alpha meta with CTD
+Alpha_meta_all_10m = read.csv("Alpha_meta_all_10m.csv", row.names = 1)
+
+write.csv(alpha_meta_all_10m, "/Users/sven/Desktop/Thesis/Final Code/FIgure 6/alpha_meta_all_10m.csv")
+
+```
+#Within Long Soun - vertical profile
+
+```{r Community dissimilarity wiothin Long SOund's vertical profile}
+#Phyloseq to df
+ForBray_df_Genus <- tax_glom(Fiord_phyloseq_Vert, taxrank = 'Genus') %>%#Merge the species at the phylum level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt into a df
+
+#Subset by Depth
+D0_df_Genus = subset(ForBray_df_Genus, Sample_Depth == "0" )
+D10_df_Genus = subset(ForBray_df_Genus,Sample_Depth == "10")
+D40_df_Genus = subset(ForBray_df_Genus, Sample_Depth == "40") 
+D100_df_Genus = subset(ForBray_df_Genus, Sample_Depth == "100" )
+D200_df_Genus = subset(ForBray_df_Genus, Sample_Depth == "200")
+D360_df_Genus = subset(ForBray_df_Genus,Sample_Depth == "360")
+
+
+#Extract Depth, Site, type, genus, and abundnace.
+D0_df_Genus = D0_df_Genus[,c(3,47,92)] 
+D10_df_Genus = D10_df_Genus[,c(3,47,92)]
+D40_df_Genus = D40_df_Genus[,c(3,47,92)]
+D100_df_Genus = D100_df_Genus[,c(3,47,92)]
+D200_df_Genus = D200_df_Genus[,c(3,47,92)] 
+D360_df_Genus = D360_df_Genus[,c(3,47,92)]
+
+#I hate R - make sample depth numeric
+D0_df_Genus$Sample_Depth = as.numeric(as.character(D0_df_Genus$Sample_Depth))
+D10_df_Genus$Sample_Depth = as.numeric(as.character(D10_df_Genus$Sample_Depth))
+D40_df_Genus$Sample_Depth = as.numeric(as.character(D40_df_Genus$Sample_Depth))
+D100_df_Genus$Sample_Depth = as.numeric(as.character(D100_df_Genus$Sample_Depth))
+D200_df_Genus$Sample_Depth = as.numeric(as.character(D200_df_Genus$Sample_Depth))
+D360_df_Genus$Sample_Depth = as.numeric(as.character(D360_df_Genus$Sample_Depth))
+
+#Transpose data
+trans_D0_df_Genus = as.data.frame(t(D0_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_D0_df_Genus) = D0_df_Genus$Genus
+trans_D10_df_Genus = as.data.frame(t(D10_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_D10_df_Genus) = D10_df_Genus$Genus
+trans_D40_df_Genus = as.data.frame(t(D40_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_D40_df_Genus) = D40_df_Genus$Genus
+trans_D100_df_Genus = as.data.frame(t(D100_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_D100_df_Genus) = D100_df_Genus$Genus
+trans_D200_df_Genus = as.data.frame(t(D200_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_D200_df_Genus) = D200_df_Genus$Genus
+trans_D360_df_Genus = as.data.frame(t(D360_df_Genus[,c(as.numeric(1),as.numeric(2))]))
+colnames(trans_D360_df_Genus) = D360_df_Genus$Genus
+
+
+#Get mean at Genus level
+D0_Genus_mean = as.data.frame(sapply(split.default(trans_D0_df_Genus, names(trans_D0_df_Genus)), rowMeans))
+D10_Genus_mean = as.data.frame(sapply(split.default(trans_D10_df_Genus, names(trans_D10_df_Genus)), rowMeans))
+D40_Genus_mean = as.data.frame(sapply(split.default(trans_D40_df_Genus, names(trans_D40_df_Genus)), rowMeans))
+D100_Genus_mean = as.data.frame(sapply(split.default(trans_D100_df_Genus, names(trans_D100_df_Genus)), rowMeans))
+D200_Genus_mean = as.data.frame(sapply(split.default(trans_D200_df_Genus, names(trans_D200_df_Genus)), rowMeans))
+D360_Genus_mean = as.data.frame(sapply(split.default(trans_D360_df_Genus, names(trans_D360_df_Genus)), rowMeans))
+
+
+#Bind into one df
+ForBray_Genus_df_num = rbind(D0_Genus_mean,
+                             D10_Genus_mean,
+                             D40_Genus_mean,
+                             D100_Genus_mean,
+                             D200_Genus_mean,
+                             D360_Genus_mean)
+
+
+#Remove excess rows
+ForBray_Genus_df_num = ForBray_Genus_df_num[-c(2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40),]
+
+ForBray_Genus_df = ForBray_Genus_df_num
+
+#Add sample depth as a column
+ForBray_Genus_df$Sample_Depth = c(0,10,40,100,200,360)
+
+rownames(ForBray_Genus_df) = c(0,10,40,100,200,360)
+rownames(ForBray_Genus_df_num) = c(0,10,40,100,200,360)
+
+#Save for recordkeeping and later use
+write.csv(ForBray_Genus_df, "Df_allmicro.csv")
+
+```
+```{r Carry out micro Bray}
+Bray_micro = vegdist(ForBray_Genus_df_num, method = "bray", binary = TRUE)
+Bray_micro
+
+#Export and add sample sites in the same order.
+write.csv(as.matrix(Bray_micro),file =
+                "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Bray_Allmicro.csv")
+
+
+#Import the new dataframe with the bray distances
+Brayplot_allmicro = read.csv("/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Brayplot_allmicro.csv")
+
+
+
+```
+```{r Plot microbial Bray}
+
+#Carry out the boxplot
+braydepth_allmicro = ggplot(Brayplot_allmicro, aes(y=Bray_Distance, x=Sample_Depth)) + 
+  geom_line() +
+  xlab("Sample Depth (m)")+
+  ylab("Bray-Curtis dissimilarity of microbial \n community compared to the surface")+
+  ylim(0,0.7) +
+  coord_flip()+
+  scale_x_reverse()
+
+#Display the plot
+braydepth_allmicro
+
+dev.copy(png,"Bray_dist_depthdiss_allmicro",units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+```{r Adonis for all microbes}
+
+write.csv(ForBray_Genus_df, "All_micro.csv")
+
+#Make distance matrix:
+Allmicrobes_adonis.dist = dist(cbind(ForBray_Genus_df[,c(1:947)]))
+
+mantel(Allmicrobes_adonis.dist,
+       Ecolog_bray)
+
+
+
+Mantel_CTD = dist(cbind(Vert_CTD$Temperature,
+                  Vert_CTD$OxygenPerSat,
+                  Vert_CTD$Salinity))
+Temperature.dist = dist(Vert_CTD$Temperature)
+Salinity.dist = dist(Vert_CTD$Salinity)
+OxygenPerSat.dist = dist(Vert_CTD$OxygenPerSat)
+mantel(Mantel_CTD,
+       Ecolog_bray)
+mantel(Mantel_CTD,
+       Allmicrobes_adonis.dist)
+mantel(Temperature.dist,
+       Allmicrobes_adonis.dist)
+mantel(Salinity.dist,
+       Allmicrobes_adonis.dist)
+mantel(OxygenPerSat.dist,
+       Allmicrobes_adonis.dist)
+
+library(vegan)
+adonis(Allmicrobes_adonis.dist~
+              Sample_Depth,
+            data = ForBray_Genus_df, 
+            permutations = 999)
+
+adonis(Allmicrobes_adonis.dist~
+              OxygenPerSat,
+            data = Vert_CTD, 
+            permutations = 999)
+#p = 0.004167
+adonis(Allmicrobes_adonis.dist~
+              Temperature,
+            data = Vert_CTD, 
+            permutations = 999)
+
+
+```
+
+
+
+
+
+
+
+

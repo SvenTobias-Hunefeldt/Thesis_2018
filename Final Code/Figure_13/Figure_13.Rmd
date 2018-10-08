@@ -1,0 +1,1308 @@
+---
+title: "Figure_13"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Construct the phyloseq object as previosly described in Figure 3.
+
+```{r Packages needed}
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+library(Rmisc)
+library(vegan)
+library(dplyr)
+```
+```{r Phyloseq}
+Fiord_phyloseq_Vert = subset_samples(Fiord_phyloseq, Sample_Site == "L5")
+```
+
+#Make plot of significant phyla that change along the vertical axis
+```{r Significant phyloseq to df}
+keepTaxa_FDR <- onlysignificance_Genus$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa <- subset_taxa(Fiord_phyloseq_Vert, Genus %in% keepTaxa_FDR) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_df <- tax_glom(Significant_taxa, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_df <- Significant_taxa_df[order(Significant_taxa_df$Phylum),] #Order them at the Phylum level
+
+```
+```{r Rename rare taxa}
+Significant_taxa_df$Phylum <- as.character(Significant_taxa_df$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians <- plyr::ddply(Significant_taxa_df, ~Phylum, function(x) c(medians=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder <- medians[medians$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_df[Significant_taxa_df$Phylum %in% remainder,]$Phylum <- 'RareTaxa'
+
+```
+```{r Statistics}
+Summary <- Rmisc::summarySE(Significant_taxa_df, measurevar="Abundance", groupvars=c("Phylum", "Sample_Depth"))
+Summary
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary, "Summary_surface.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary<-dplyr::arrange(Summary,Phylum, Abundance)
+
+#Only take the unique Phylums
+Summary$Phylum <- factor(Summary$Phylum,
+                                         levels=(unique(Summary$Phylum)))
+
+
+#Save as table for ease of reading.
+write.csv(Summary, file = "Ordered_summary.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", 
+                       Actinobacteria = "green", 
+                       Bacteroidetes = "steelblue", 
+                       Chloroflexi = "coral4",
+                       Cyanobacteria = "purple", 
+                       Euryarchaeota = "aquamarine", 
+                       Gemmatimonadetes = "blueviolet",
+                       Marinimicrobia = "deeppink",
+                       Parcubacteria = "orange", 
+                       Planctomycetes = "wheat", 
+                       Proteobacteria = "olivedrab", 
+                       Thaumarchaeota = "magenta",
+                       Verrucomicrobia = "tan", 
+                       "RareTaxa (<1%)" = "black")
+
+
+levels(Summary$Phylum) = c("Acidobacteria", "Actinobacteria", "Bacteroidetes", "Chloroflexi", "Cyanobacteria", "Euryarchaeota", "Gemmatimonadetes", "Marinimicrobia", "Planctomycetes", "Proteobacteria", "RareTaxa (<1%)", "Thaumarchaeota", "Verrucomicrobia")
+  
+Summary_plot<-ggplot(Summary, 
+                        aes(x=Sample_Depth, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() +
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Sample Dept (m)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)+
+  coord_flip()+
+  scale_x_reverse()
+
+
+Summary_plot
+
+dev.copy(png, "Significant_phylum", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+#Significant vs. Nonsignificant plot
+```{r Label the significant vs. non-significant}
+
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+
+# get abundance in %
+Sample_counts <- transform_sample_counts(Fiord_phyloseq_Vert, function(x) x/sum(x))
+
+# agglomerate taxa
+glom <- tax_glom(Sample_counts, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat <- psmelt(glom)
+
+
+# convert Phylum to a character vector from a factor because R
+dat$Genus <- as.character(dat$Genus)
+
+#Convert to character, because R
+Significant_taxa <- as.character(onlysignificance_Genus$Genus)
+
+#Change the name of the significant organisms
+dat[dat$Genus %in% Significant_taxa,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df = subset(dat, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat[dat$Genus %!in% Significant_taxa,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df = subset(dat, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign = rbind(Nonsignificant_df, Significant_df)
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign$Genus))
+
+#Total number of sample
+20892 + 3768 
+#24660
+
+#Ratio of significant
+3768/246603
+#15.28%
+
+#Ratio of non-significant
+20892/24660
+#84.72%
+
+#Plot
+library(ggplot2)
+plotme = ggplot(plotsign.vs.nonSign,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count", label = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))#+
+  #geom_text(aes(label = "count"), position = "stack")
+
+plotme
+
+dev.copy(png, "Sign.vs.NonSign", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+```
+#Significance changes based on CTD - Spearman
+##Oxygen
+```{r Set up df - surface}
+
+#Import
+Spearman_df = read.csv("~/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Df_allmicro.csv", row.names = 1, stringsAsFactors = F)
+
+#Add CTD data
+Spearman_df$Oxygen = c(as.numeric(7.919300, 6.930200, 6.016600, 6.207767, 6.683000, 6.506733))
+Spearman_df$Salinity = c(29.17795, 33.83610, 34.12873, 34.12710, 34.12883, 34.13773)
+Spearman_df$Temperature = c(2.69155, 12.10170, 12.25490, 12.08940, 11.97240, 11.99627)
+
+
+
+```
+```{r Carry out spearman for Oxygen - surface}
+
+#Make df to add values to.
+Spearman_results_Ox = data.frame(Genus = NA, rho = as.numeric(0), p.value = as.numeric(0), adjusted.p.value = as.numeric(0))
+#Expand df to fit all genera.
+Spearman_results_Ox = Spearman_results_Ox[1:949,1:4]
+
+is.na(Spearman_df) = 0
+
+Spearman_Ox = lapply(Spearman_df, MARGIN = 2, cor.test, y = Spearman_df$Oxygen, method = "p")
+
+cor.test(x = Spearman_df$Sample_Depth, y = Spearman_df$Oxygen, method = "s")
+
+#Set up and run loops for rho and p values.
+y=Spearman_Ox[1:949]
+rho_list_Ox = vector("list", 949)
+for (i in 1:length(y) ){
+  rho_list_Ox[[i]] = Spearman_Ox[[i]]$estimate
+  names(rho_list_Ox[[i]]) = names(Spearman_Ox)[i]
+  Spearman_results_Ox[i,2] = rho_list_Ox[i]
+  Spearman_results_Ox[i,1] = names(Spearman_Ox[i])
+}
+
+pvalue_list_Ox = vector("list", 949)
+for (i in 1:length(y) ){
+  pvalue_list_Ox[[i]] = Spearman_Ox[[i]]$p.value
+  names(pvalue_list_Ox[[i]]) = names(Spearman_Ox)[i]
+  Spearman_results_Ox[i,3] = pvalue_list_Ox[i]
+}
+
+#Remove NA values
+Spearman_results_noNA_Ox = subset(Spearman_results_Ox, !rho == "NA")
+
+#See abosulutely nothing here.
+
+
+```
+```{r FDR correction}
+
+adjusted_p.value_surface_Ox = p.adjust(Spearman_results_noNA_surface_Ox$p.value, method = "fdr")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_surface_df_Ox = as.data.frame(adjusted_p.value_surface_Ox)
+
+#Bind adjusted p-value onto data frame
+Spearman_results_noNA_surface_Ox$adjusted.p.value = adjusted_p.value_surface_df_Ox$adjusted_p.value_surface
+
+#Nothing is significant if FDR corrected.
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_results_noNA_surface_Ox, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor/Spearman_taxachanges_surface_Ox.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_surface_Genus_Ox = subset(Spearman_results_noNA_surface_Ox, p.value < 5e-2)
+
+#No significant taxa changes for adjusted p-value.
+
+#Extract the significant values
+write.csv(onlysignificance_surface_Genus_Ox, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_9_Significant_taxonomychangesHor//Spearman_significant_surface_Genus_Ox.csv")
+
+```
+```{r Significant phyloseq to df - oxygen}
+keepTaxa_FDR_surface_Ox <- onlysignificance_surface_Genus_Ox$Genus #Extract the OTU table that was shown to be significant
+library(Rmisc)
+Significant_taxa_surface_Ox <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Ox) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Ox <- tax_glom(Significant_taxa_surface_Ox, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Ox <- Significant_taxa_surface_df_Ox[order(Significant_taxa_surface_df_Ox$Phylum),] #Order them at the Phylum level
+
+#Add Distance
+##Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L1", Significant_taxa_surface_df_Ox$New_Name)] = 0
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L2", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(5.59)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L3", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(14.3)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L4", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(10.67)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L5", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(8.47)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L6", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(4.73)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L7", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(3.16)
+Significant_taxa_surface_df_Ox$Distancefrom_L1[grep("L8", Significant_taxa_surface_df_Ox$New_Name)] = as.numeric(2.47)
+
+```
+```{r Rename rare taxa}
+Significant_taxa_surface_df_Ox$Phylum <- as.character(Significant_taxa_surface_df_Ox$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_surface_Ox <- ddply(Significant_taxa_surface_df_Ox, ~Phylum, function(x) c(medians_surface_Ox=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_surface_Ox <- medians_surface_Ox[medians_surface_Ox$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+Significant_taxa_surface_df_Ox[Significant_taxa_surface_df_Ox$Phylum %in% remainder_surface_Ox,]$Phylum <- 'RareTaxa'
+
+```
+```{r Statistics - surface}
+Summary_surface_Ox <- summarySE(Significant_taxa_surface_df_Ox, measurevar="Abundance", groupvars=c("Phylum", "Distancefrom_L1"))
+Summary_surface_Ox
+
+
+#check naming of Genera to make sure they are informative otherwise save, fix and replace
+write.table(Summary_surface_Ox, "Summary_surface_Ox.txt", sep = "\t")
+
+ 
+#Arrange by Phylum then abundance
+Summary_surface_Ox<-dplyr::arrange(Summary_surface_Ox,Phylum, Abundance)
+
+#Only take the unique Phylums
+Summary_surface$Phylum_Ox <- factor(Summary_surface_Ox$Phylum,
+                                         levels=(unique(Summary_surface_Ox$Phylum)))
+
+
+#Save as table for ease of reading.
+write.csv(Summary_surface_Ox, file = "Ordered_summary_surface_Ox.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab", Verrucomicrobia = "tan", RareTaxa = "black")
+  
+  
+Summary_surface_plot_Ox<-ggplot(Summary_surface_Ox, 
+                        aes(x=Distancefrom_L1, 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"
+                )+
+  theme_bw() + 
+  #facet_grid(~Sample_Depth, 
+        #     drop = TRUE, 
+         #    space = "fixed", 
+          #   scales = "free", 
+           #  margins = "TRUE", 
+            # labeller = label_wrap_gen(width = 16, multi_line = TRUE))+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Distance from the outermost sample (km)")+
+  ylab("Relative abundance (%)")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)
+
+
+Summary_surface_plot_Ox
+
+dev.copy(png, "Significant_phylum_surface_ox", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+```
+```{r Significant vs. non-significant - oxygen}
+
+
+
+keepTaxa_FDR_surface_Ox <- onlysignificance_surface_Genus_Ox$Genus #Extract the OTU table that was shown to be significant
+Significant_taxa_surface_Ox <- subset_taxa(Fiord_phyloseq_Horonly_surface, Genus %in% keepTaxa_FDR_surface_Ox) #Subset the taxa by the OTUs that were shown to change significantly
+Significant_taxa_surface_df_Ox <- tax_glom(Significant_taxa_surface_Ox, taxrank = 'Phylum') %>% #Merge the species at the genus level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+Significant_taxa_surface_df_Ox <- Significant_taxa_surface_df_Ox[order(Significant_taxa_surface_df_Ox$Phylum),] #Order them at the Phylum level
+
+
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+
+# get abundance in %
+Sample_counts_Ox <- transform_sample_counts(Fiord_phyloseq_Horonly, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Ox <- tax_glom(Sample_counts_Ox, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Ox <- psmelt(glom_Ox)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Ox$Genus <- as.character(dat_Ox$Genus)
+
+#Convert to character, as R
+Significant_taxa_Ox <- as.character(onlysignificance_surface_Genus_Ox$Genus)
+
+#Change the name of the significant organisms
+dat_Ox[dat_Ox$Genus %in% Significant_taxa_Ox,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Ox = subset(dat_Ox, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Ox[dat_Ox$Genus %!in% Significant_df_Ox,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Ox = subset(dat_Ox, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Ox = rbind(Nonsignificant_df_Ox, Significant_df_Ox)
+
+#Plot
+plotme_Ox = ggplot(plotsign.vs.nonSign_Ox,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Ox
+
+dev.copy(png, "Sign.vs.NonSign_Ox", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+```
+#Significance changes based on CTD - Exact test
+##Oxygen
+```{r exact test}
+#check open packages
+(.packages())
+##Close all but phyloseq
+detachAllPackages <- function() {
+  
+  basic.packages <- c("package:stats","package:graphics","package:grDevices","package:utils","package:datasets","package:methods","package:base")
+  
+  package.list <- search()[ifelse(unlist(gregexpr("package:",search()))==1,TRUE,FALSE)]
+  
+  package.list <- setdiff(package.list,basic.packages)
+  
+  if (length(package.list)>0)  for (package in package.list) detach(package, character.only=TRUE)
+  
+}
+
+detachAllPackages()
+
+
+library("phyloseq")
+packageVersion("phyloseq")
+library("edgeR")
+packageVersion("edgeR")
+library(phyloseq)
+library(ggplot2)
+library(plyr)
+library(scales)
+library(reshape)
+library(RColorBrewer)
+library(grid)
+library(empiricalFDR.DESeq2)
+library("DESeq2")
+library(dplyr)
+library(Rmisc)
+
+
+#' Convert phyloseq OTU count data into DGEList for edgeR package
+#' 
+#' Further details.
+#' 
+#' @param physeq (Required).  A \code{\link{phyloseq-class}} or
+#'  an \code{\link{otu_table-class}} object. 
+#'  The latter is only appropriate if \code{group} argument is also a 
+#'  vector or factor with length equal to \code{nsamples(physeq)}.
+#'  
+#' @param group (Required). A character vector or factor giving the experimental
+#'  group/condition for each sample/library. Alternatively, you may provide
+#'  the name of a sample variable. This name should be among the output of
+#'  \code{sample_variables(physeq)}, in which case
+#'  \code{get_variable(physeq, group)} would return either a character vector or factor.
+#'  This is passed on to \code{\link[edgeR]{DGEList}},
+#'  and you may find further details or examples in its documentation.
+#'  
+#' @param method (Optional). The label of the edgeR-implemented normalization to use.
+#'  See \code{\link[edgeR]{calcNormFactors}} for supported options and details. 
+#'  The default option is \code{'RLE'}, which is a scaling factor method 
+#'  proposed by Anders and Huber (2010).
+#'  At time of writing, the \link[edgeR]{edgeR} package supported 
+#'  the following options to the \code{method} argument:
+#'  
+#'  \code{c('TMM', 'RLE', 'upperquartile', 'none')}.
+#'
+#' @param ... Additional arguments passed on to \code{\link[edgeR]{DGEList}}
+#' 
+#' @examples
+#' 
+phyloseq_to_edgeR = function(physeq, group, method = "RLE", ...) {
+  require("edgeR")
+  require("phyloseq")
+  # Enforce orientation.
+  if (!taxa_are_rows(physeq)) {
+    physeq <- t(physeq)
+  }
+  x = as(otu_table(physeq), "matrix")
+  # Add one to protect against overflow, log(0) issues.
+  x = x + 1
+  # Check `group` argument
+  if (identical(all.equal(length(group), 1), TRUE) & nsamples(physeq) > 1) {
+    # Assume that group was a sample variable name (must be categorical)
+    group = get_variable(physeq, group)
+  }
+  # Define gene annotations (`genes`) as tax_table
+  taxonomy = tax_table(physeq, errorIfNULL=FALSE)
+  if( !is.null(taxonomy) ){
+    taxonomy = data.frame(as(taxonomy, "matrix"))
+  } 
+  # Now turn into a DGEList
+  y = DGEList(counts = x, group = group, genes = taxonomy, remove.zeros = TRUE, 
+              ...)
+  # Calculate the normalization factors
+  z = calcNormFactors(y, method = method)
+  # Check for division by zero inside `calcNormFactors`
+  if (!all(is.finite(z$samples$norm.factors))) {
+    stop("Something wrong with edgeR::calcNormFactors on this data,\n         non-finite $norm.factors, consider changing `method` argument")
+  }
+  # Estimate dispersions
+  return(estimateTagwiseDisp(estimateCommonDisp(z)))
+}
+
+```
+```{r Significant changes between depths based on OTU}
+
+#Create CTD df
+CTDtoadd = data.frame(Sample_Depth = c("0","10","40", "100", "200", "360"), OxygenPerSat = as.numeric(0), Salinity = as.numeric(0), Temperature = as.numeric(0))
+#Expand df to fit all genera.
+CTDtoadd$OxygenPerSat = c(7.919300, 6.930200, 6.016600, 6.207767, 6.683000, 6.506733)
+CTDtoadd$Salinity = c(29.17795, 33.83610, 34.12873, 34.12710, 34.12883, 34.13773)
+CTDtoadd$Temperature = c(2.69155, 12.10170, 12.25490, 12.08940, 11.97240, 11.99627)
+
+#Merge CTD df and smaple data
+CTD_df = cbind(CTDtoadd, Fiord_phyloseq_Vert@sam_data)
+
+#Replace the old sample data with the new df
+Fiord_phyloseq_Vert@sam_data = sample_data(CTD_df)
+```
+```{r carry out Exact test}
+
+#Group them by their depths
+dge_EdgeR_obj_Ox = phyloseq_to_edgeR(Fiord_phyloseq_Vert, group = "OxygenPerSat")
+
+# Perform binary test
+et_EdgeR_Ox = exactTest(dge_EdgeR_obj_Ox)
+# Extract values from test results
+tt_EdgeR_Ox = topTags(et_EdgeR_Ox, n = nrow(dge_EdgeR_obj_Ox$table), adjust.method = "BH", sort.by = "PValue")
+res_EdgeR_Ox = tt_EdgeR_Ox@.Data[[1]]
+sigtab_2fold_EdgeR_Ox<- subset(res_EdgeR_Ox, PValue < 0.05 & logFC >= 2 | PValue < 0.05 & logFC <= -2)
+
+```
+```{r Make df of significant taxa changes inside Fjord based on oxygen}
+
+#Keep only FDR corrected <.1 - as there are none - have to use something else
+sigtab_2fold_FDR_Ox <- subset(sigtab_2fold_EdgeR_Ox, FDR < 0.1)
+
+
+keepTaxa_FDR_Ox <- sigtab_2fold_EdgeR_Ox$Genus #Extract the OTU table that was shown to be significant
+Twofold_FDR_Ox <- subset_taxa(Fiord_phyloseq_Vert, Genus %in% keepTaxa_FDR_Ox) #Subset the taxa by the OTUs that were shown to change significantly
+dat_2fold_FDR_Ox <- tax_glom(Twofold_FDR_Ox, taxrank = 'Phylum') %>%#Merge the species at the Phylum level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+dat_2fold_FDR_Ox <- dat_2fold_FDR_Ox[order(dat_2fold_FDR_Ox$Phylum),] #Order them at the Phylum level
+
+dat_2fold_FDR_Ox$Phylum <- as.character(dat_2fold_FDR_Ox$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_Ox <- ddply(dat_2fold_FDR_Ox, ~Phylum, function(x) c(median=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_Ox <- medians_Ox[medians_Ox$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+dat_2fold_FDR_Ox[dat_2fold_FDR_Ox$Phylum %in% remainder_Ox,]$Phylum <- 'RareTaxa'
+```
+```{r Plot at the phyla level}
+
+Summary_Ox <- summarySE(dat_2fold_FDR_Ox, measurevar="Abundance", groupvars=c("Phylum", "Sample_Depth", "OxygenPerSat"))
+Summary_Ox
+
+ 
+
+Summary_Ox<-dplyr::arrange(Summary_Ox,Phylum, Abundance)
+
+Summary_Ox$Phylum <- factor(Summary_Ox$Phylum,
+                         levels=(unique(Summary_Ox$Phylum)))
+
+#Check for weird names and make Rare taxa name better.
+levels(Summary_Ox$Phylum)
+
+#Rename levels
+levels(Summary_Ox$Phylum) = c("Acidobacteria",
+                           "Actinobacteria", 
+                   "Bacteroidetes",
+                   "Chloroflexi",
+                   "Cyanobacteria",
+                   "Euryarchaeota",
+                   "Marinimicrobia",
+                   "Planctomycetes",
+                   "Proteobacteria",
+                   "Rare Taxa (<1%)",
+                   "Thaumarchaeota",
+                   "Verrucomicrobia")
+
+levels(Summary_Ox$Phylum) #Check to make sure it worked
+
+#Save as table for ease of reading.
+write.csv(Summary_Ox, file = "Ordered_summary_Ox.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Chloroflexi = "grey",Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Marinimicrobia = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab",Thaumarchaeota = "firebrick", Verrucomicrobia = "tan", "Rare Taxa (<1%)" = "black")
+  
+  library(ggplot2)
+Summary_plot_Ox<-ggplot(Summary_Ox, 
+                        aes(x=as.numeric(as.character(Sample_Depth)), 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"#, 
+                #position=pd
+                )+
+  theme_bw()+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Sample Depth (m)")+
+  ylab("Mean relative abundance")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)+
+  coord_flip()+
+  scale_x_reverse()
+
+
+Summary_plot_Ox
+
+dev.copy(png, "Significant_phylum_EdgeR_Ox", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+
+```
+```{r EdgeR significance vs nonsignificance - Oxygen}
+
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+
+# get abundance in %
+Sample_counts_Ox <- transform_sample_counts(Fiord_phyloseq_Vert, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Ox <- tax_glom(Sample_counts_Ox, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Ox <- psmelt(glom_Ox)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Ox$Genus <- as.character(dat_Ox$Genus)
+
+#Convert to character, as R
+Significant_taxa_Ox <- as.character(keepTaxa_FDR_Ox)
+
+#Change the name of the significant organisms
+dat_Ox[dat_Ox$Genus %in% Significant_taxa_Ox,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Ox = subset(dat_Ox, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Ox[dat_Ox$Genus %!in% Significant_df_Ox,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Ox = subset(dat_Ox, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Ox = rbind(Nonsignificant_df_Ox, Significant_df_Ox)
+
+#Plot
+plotme_Ox = ggplot(plotsign.vs.nonSign_Ox,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Ox
+
+dev.copy(png, "Sign.vs.NonSign_Ox", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign_Ox$Genus))
+
+#Total number of sample
+ 20892       +     7344
+#28236
+
+#Ratio of significant
+7344/28236
+#26%
+
+#Ratio of non-significant
+20892/28236
+#74%
+```
+##Salinity
+```{r exact test}
+#check open packages
+(.packages())
+##Close all but phyloseq
+detachAllPackages <- function() {
+  
+  basic.packages <- c("package:stats","package:graphics","package:grDevices","package:utils","package:datasets","package:methods","package:base")
+  
+  package.list <- search()[ifelse(unlist(gregexpr("package:",search()))==1,TRUE,FALSE)]
+  
+  package.list <- setdiff(package.list,basic.packages)
+  
+  if (length(package.list)>0)  for (package in package.list) detach(package, character.only=TRUE)
+  
+}
+
+detachAllPackages()
+
+
+library("phyloseq")
+packageVersion("phyloseq")
+library("edgeR")
+packageVersion("edgeR")
+library(phyloseq)
+library(ggplot2)
+library(plyr)
+library(scales)
+library(reshape)
+library(RColorBrewer)
+library(grid)
+library(empiricalFDR.DESeq2)
+library("DESeq2")
+library(dplyr)
+library(Rmisc)
+
+
+#' Convert phyloseq OTU count data into DGEList for edgeR package
+#' 
+#' Further details.
+#' 
+#' @param physeq (Required).  A \code{\link{phyloseq-class}} or
+#'  an \code{\link{otu_table-class}} object. 
+#'  The latter is only appropriate if \code{group} argument is also a 
+#'  vector or factor with length equal to \code{nsamples(physeq)}.
+#'  
+#' @param group (Required). A character vector or factor giving the experimental
+#'  group/condition for each sample/library. Alternatively, you may provide
+#'  the name of a sample variable. This name should be among the output of
+#'  \code{sample_variables(physeq)}, in which case
+#'  \code{get_variable(physeq, group)} would return either a character vector or factor.
+#'  This is passed on to \code{\link[edgeR]{DGEList}},
+#'  and you may find further details or examples in its documentation.
+#'  
+#' @param method (Optional). The label of the edgeR-implemented normalization to use.
+#'  See \code{\link[edgeR]{calcNormFactors}} for supported options and details. 
+#'  The default option is \code{'RLE'}, which is a scaling factor method 
+#'  proposed by Anders and Huber (2010).
+#'  At time of writing, the \link[edgeR]{edgeR} package supported 
+#'  the following options to the \code{method} argument:
+#'  
+#'  \code{c('TMM', 'RLE', 'upperquartile', 'none')}.
+#'
+#' @param ... Additional arguments passed on to \code{\link[edgeR]{DGEList}}
+#' 
+#' @examples
+#' 
+phyloseq_to_edgeR = function(physeq, group, method = "RLE", ...) {
+  require("edgeR")
+  require("phyloseq")
+  # Enforce orientation.
+  if (!taxa_are_rows(physeq)) {
+    physeq <- t(physeq)
+  }
+  x = as(otu_table(physeq), "matrix")
+  # Add one to protect against overflow, log(0) issues.
+  x = x + 1
+  # Check `group` argument
+  if (identical(all.equal(length(group), 1), TRUE) & nsamples(physeq) > 1) {
+    # Assume that group was a sample variable name (must be categorical)
+    group = get_variable(physeq, group)
+  }
+  # Define gene annotations (`genes`) as tax_table
+  taxonomy = tax_table(physeq, errorIfNULL=FALSE)
+  if( !is.null(taxonomy) ){
+    taxonomy = data.frame(as(taxonomy, "matrix"))
+  } 
+  # Now turn into a DGEList
+  y = DGEList(counts = x, group = group, genes = taxonomy, remove.zeros = TRUE, 
+              ...)
+  # Calculate the normalization factors
+  z = calcNormFactors(y, method = method)
+  # Check for division by zero inside `calcNormFactors`
+  if (!all(is.finite(z$samples$norm.factors))) {
+    stop("Something wrong with edgeR::calcNormFactors on this data,\n         non-finite $norm.factors, consider changing `method` argument")
+  }
+  # Estimate dispersions
+  return(estimateTagwiseDisp(estimateCommonDisp(z)))
+}
+
+```
+```{r Significant changes between depths based on OTU}
+
+#Create CTD df
+CTDtoadd = data.frame(Sample_Depth = c("0","10","40", "100", "200", "360"), OxygenPerSat = as.numeric(0), Salinity = as.numeric(0), Temperature = as.numeric(0))
+#Expand df to fit all genera.
+CTDtoadd$OxygenPerSat = c(7.919300, 6.930200, 6.016600, 6.207767, 6.683000, 6.506733)
+CTDtoadd$Salinity = c(29.17795, 33.83610, 34.12873, 34.12710, 34.12883, 34.13773)
+CTDtoadd$Temperature = c(2.69155, 12.10170, 12.25490, 12.08940, 11.97240, 11.99627)
+
+#Merge CTD df and smaple data
+CTD_df = cbind(CTDtoadd, Fiord_phyloseq_Vert@sam_data)
+
+#Replace the old sample data with the new df
+Fiord_phyloseq_Vert@sam_data = sample_data(CTD_df)
+```
+```{r carry out Exact test}
+
+#Group them by their depths
+dge_EdgeR_obj_Sal = phyloseq_to_edgeR(Fiord_phyloseq_Vert, group = "Salinity")
+
+# Perform binary test
+et_EdgeR_Sal = exactTest(dge_EdgeR_obj_Sal)
+# Extract values from test results
+tt_EdgeR_Sal = topTags(et_EdgeR_Sal, n = nrow(dge_EdgeR_obj_Sal$table), adjust.method = "BH", sort.by = "PValue")
+res_EdgeR_Sal = tt_EdgeR_Sal@.Data[[1]]
+sigtab_2fold_EdgeR_Sal<- subset(res_EdgeR_Sal, PValue < 0.05 & logFC >= 2 | PValue < 0.05 & logFC <= -2)
+
+```
+```{r Make df of significant taxa changes inside Fjord based on Salinity}
+
+#Keep only FDR corrected <.1 - as there are none - have to use something else
+sigtab_2fold_FDR_Sal <- subset(sigtab_2fold_EdgeR_Sal, FDR < 0.1)
+
+
+keepTaxa_FDR_Sal <- sigtab_2fold_EdgeR_Sal$Genus #Extract the OTU table that was shown to be significant
+Twofold_FDR_Sal <- subset_taxa(Fiord_phyloseq_Vert, Genus %in% keepTaxa_FDR_Sal) #Subset the taxa by the OTUs that were shown to change significantly
+dat_2fold_FDR_Sal <- tax_glom(Twofold_FDR_Sal, taxrank = 'Phylum') %>%#Merge the species at the Phylum level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+dat_2fold_FDR_Sal <- dat_2fold_FDR_Sal[order(dat_2fold_FDR_Sal$Phylum),] #Order them at the Phylum level
+
+dat_2fold_FDR_Sal$Phylum <- as.character(dat_2fold_FDR_Sal$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_Sal <- ddply(dat_2fold_FDR_Sal, ~Phylum, function(x) c(median=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_Sal <- medians_Sal[medians_Sal$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+dat_2fold_FDR_Sal[dat_2fold_FDR_Sal$Phylum %in% remainder_Sal,]$Phylum <- 'RareTaxa'
+```
+```{r Plot at the phyla level}
+
+Summary_Sal <- summarySE(dat_2fold_FDR_Sal, measurevar="Abundance", groupvars=c("Phylum", "Sample_Depth", "Salinity"))
+Summary_Sal
+
+ 
+
+Summary_Sal<-dplyr::arrange(Summary_Sal,Phylum, Abundance)
+
+Summary_Sal$Phylum <- factor(Summary_Sal$Phylum,
+                         levels=(unique(Summary_Sal$Phylum)))
+
+#Check for weird names and make Rare taxa name better.
+levels(Summary_Sal$Phylum)
+
+#Rename levels
+levels(Summary_Sal$Phylum) = c("Acidobacteria",
+                           "Actinobacteria", 
+                   "Bacteroidetes",
+                   "Chloroflexi",
+                   "Cyanobacteria",
+                   "Euryarchaeota",
+                   "Marinimicrobia",
+                   "Planctomycetes",
+                   "Proteobacteria",
+                   "Rare Taxa (<1%)",
+                   "Thaumarchaeota",
+                   "Verrucomicrobia")
+
+levels(Summary_Sal$Phylum) #Check to make sure it worked
+
+#Save as table for ease of reading.
+write.csv(Summary_Sal, file = "Ordered_summary_Sal.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Chloroflexi = "grey",Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Marinimicrobia = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab",Thaumarchaeota = "firebrick", Verrucomicrobia = "tan", "Rare Taxa (<1%)" = "black")
+  
+  
+Summary_plot_Sal<-ggplot(Summary_Sal, 
+                        aes(x=as.numeric(as.character(Sample_Depth)), 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"#, 
+                #position=pd
+                )+
+  theme_bw()+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Sample Depth (m)")+
+  ylab("Mean relative abundance")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)+
+  coord_flip()+
+  scale_x_reverse()
+
+
+Summary_plot_Sal
+
+dev.copy(png, "Significant_phylum_EdgeR_Sal", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+
+```
+```{r EdgeR significance vs nonsignificance - Salinity}
+
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+
+# get abundance in %
+Sample_counts_Sal <- transform_sample_counts(Fiord_phyloseq_Vert, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Sal <- tax_glom(Sample_counts_Sal, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Sal <- psmelt(glom_Sal)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Sal$Genus <- as.character(dat_Sal$Genus)
+
+#Convert to character, as R
+Significant_taxa_Sal <- as.character(keepTaxa_FDR_Sal)
+
+#Change the name of the significant organisms
+dat_Sal[dat_Sal$Genus %in% Significant_taxa_Sal,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Sal = subset(dat_Sal, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Sal[dat_Sal$Genus %!in% Significant_df_Sal,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Sal = subset(dat_Sal, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Sal = rbind(Nonsignificant_df_Sal, Significant_df_Sal)
+
+#Plot
+plotme_Sal = ggplot(plotsign.vs.nonSign_Sal,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Sal
+
+dev.copy(png, "Sign.vs.NonSign_Sal", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign_Sal$Genus))
+
+#Total number of sample
+ 20892       +     7392
+#28284
+
+#Ratio of significant
+7392/28284
+#26.1%
+
+#Ratio of non-significant
+20892/28284
+#73.9%
+```
+##Temperature
+```{r exact test}
+#check open packages
+(.packages())
+##Close all but phyloseq
+detachAllPackages <- function() {
+  
+  basic.packages <- c("package:stats","package:graphics","package:grDevices","package:utils","package:datasets","package:methods","package:base")
+  
+  package.list <- search()[ifelse(unlist(gregexpr("package:",search()))==1,TRUE,FALSE)]
+  
+  package.list <- setdiff(package.list,basic.packages)
+  
+  if (length(package.list)>0)  for (package in package.list) detach(package, character.only=TRUE)
+  
+}
+
+detachAllPackages()
+
+
+library("phyloseq")
+packageVersion("phyloseq")
+library("edgeR")
+packageVersion("edgeR")
+library(phyloseq)
+library(ggplot2)
+library(plyr)
+library(scales)
+library(reshape)
+library(RColorBrewer)
+library(grid)
+library(empiricalFDR.DESeq2)
+library("DESeq2")
+library(dplyr)
+library(Rmisc)
+
+
+#' Convert phyloseq OTU count data into DGEList for edgeR package
+#' 
+#' Further details.
+#' 
+#' @param physeq (Required).  A \code{\link{phyloseq-class}} or
+#'  an \code{\link{otu_table-class}} object. 
+#'  The latter is only appropriate if \code{group} argument is also a 
+#'  vector or factor with length equal to \code{nsamples(physeq)}.
+#'  
+#' @param group (Required). A character vector or factor giving the experimental
+#'  group/condition for each sample/library. Alternatively, you may provide
+#'  the name of a sample variable. This name should be among the output of
+#'  \code{sample_variables(physeq)}, in which case
+#'  \code{get_variable(physeq, group)} would return either a character vector or factor.
+#'  This is passed on to \code{\link[edgeR]{DGEList}},
+#'  and you may find further details or examples in its documentation.
+#'  
+#' @param method (Optional). The label of the edgeR-implemented normalization to use.
+#'  See \code{\link[edgeR]{calcNormFactors}} for supported options and details. 
+#'  The default option is \code{'RLE'}, which is a scaling factor method 
+#'  proposed by Anders and Huber (2010).
+#'  At time of writing, the \link[edgeR]{edgeR} package supported 
+#'  the following options to the \code{method} argument:
+#'  
+#'  \code{c('TMM', 'RLE', 'upperquartile', 'none')}.
+#'
+#' @param ... Additional arguments passed on to \code{\link[edgeR]{DGEList}}
+#' 
+#' @examples
+#' 
+phyloseq_to_edgeR = function(physeq, group, method = "RLE", ...) {
+  require("edgeR")
+  require("phyloseq")
+  # Enforce orientation.
+  if (!taxa_are_rows(physeq)) {
+    physeq <- t(physeq)
+  }
+  x = as(otu_table(physeq), "matrix")
+  # Add one to protect against overflow, log(0) issues.
+  x = x + 1
+  # Check `group` argument
+  if (identical(all.equal(length(group), 1), TRUE) & nsamples(physeq) > 1) {
+    # Assume that group was a sample variable name (must be categorical)
+    group = get_variable(physeq, group)
+  }
+  # Define gene annotations (`genes`) as tax_table
+  taxonomy = tax_table(physeq, errorIfNULL=FALSE)
+  if( !is.null(taxonomy) ){
+    taxonomy = data.frame(as(taxonomy, "matrix"))
+  } 
+  # Now turn into a DGEList
+  y = DGEList(counts = x, group = group, genes = taxonomy, remove.zeros = TRUE, 
+              ...)
+  # Calculate the normalization factors
+  z = calcNormFactors(y, method = method)
+  # Check for division by zero inside `calcNormFactors`
+  if (!all(is.finite(z$samples$norm.factors))) {
+    stop("Something wrong with edgeR::calcNormFactors on this data,\n         non-finite $norm.factors, consider changing `method` argument")
+  }
+  # Estimate dispersions
+  return(estimateTagwiseDisp(estimateCommonDisp(z)))
+}
+
+```
+```{r Significant changes between depths based on OTU}
+
+#Create CTD df
+CTDtoadd = data.frame(Sample_Depth = c("0","10","40", "100", "200", "360"), OxygenPerSat = as.numeric(0), Salinity = as.numeric(0), Temperature = as.numeric(0))
+#Expand df to fit all genera.
+CTDtoadd$OxygenPerSat = c(7.919300, 6.930200, 6.016600, 6.207767, 6.683000, 6.506733)
+CTDtoadd$Salinity = c(29.17795, 33.83610, 34.12873, 34.12710, 34.12883, 34.13773)
+CTDtoadd$Temperature = c(2.69155, 12.10170, 12.25490, 12.08940, 11.97240, 11.99627)
+
+#Merge CTD df and smaple data
+CTD_df = cbind(CTDtoadd, Fiord_phyloseq_Vert@sam_data)
+
+#Replace the old sample data with the new df
+Fiord_phyloseq_Vert@sam_data = sample_data(CTD_df)
+```
+```{r carry out Exact test}
+
+#Group them by their depths
+dge_EdgeR_obj_Temp = phyloseq_to_edgeR(Fiord_phyloseq_Vert, group = "Temperature")
+
+# Perform binary test
+et_EdgeR_Temp = exactTest(dge_EdgeR_obj_Temp)
+# Extract values from test results
+tt_EdgeR_Temp = topTags(et_EdgeR_Temp, n = nrow(dge_EdgeR_obj_Temp$table), adjust.method = "BH", sort.by = "PValue")
+res_EdgeR_Temp = tt_EdgeR_Temp@.Data[[1]]
+sigtab_2fold_EdgeR_Temp<- subset(res_EdgeR_Temp, PValue < 0.05 & logFC >= 2 | PValue < 0.05 & logFC <= -2)
+
+```
+```{r Make df of significant taxa changes inside Fjord based on Temperature}
+
+#Keep only FDR corrected <.1 - as there are none - have to use something else
+sigtab_2fold_FDR_Temp <- subset(sigtab_2fold_EdgeR_Temp, FDR < 0.1)
+
+
+keepTaxa_FDR_Temp <- sigtab_2fold_EdgeR_Temp$Genus #Extract the OTU table that was shown to be significant
+Twofold_FDR_Temp <- subset_taxa(Fiord_phyloseq_Vert, Genus %in% keepTaxa_FDR_Temp) #Subset the taxa by the OTUs that were shown to change significantly
+dat_2fold_FDR_Temp <- tax_glom(Twofold_FDR_Temp, taxrank = 'Phylum') %>%#Merge the species at the Phylum level
+  transform_sample_counts(function(x) {x/sum(x)} ) %>% #Extract abundance data from phyloseq object
+  psmelt() #Melt it into a dataframe
+dat_2fold_FDR_Temp <- dat_2fold_FDR_Temp[order(dat_2fold_FDR_Temp$Phylum),] #Order them at the Phylum level
+
+dat_2fold_FDR_Temp$Phylum <- as.character(dat_2fold_FDR_Temp$Phylum)
+  # group dataframe by Phylum, calculate relative abundance
+medians_Temp <- ddply(dat_2fold_FDR_Temp, ~Phylum, function(x) c(median=mean(x$Abundance)))
+  # find Phyla whose rel. abund. is less than 1%
+remainder_Temp <- medians_Temp[medians_Temp$median <= 0.01,]$Phylum
+  # change their name to "Remainder"
+dat_2fold_FDR_Temp[dat_2fold_FDR_Temp$Phylum %in% remainder_Temp,]$Phylum <- 'RareTaxa'
+```
+```{r Plot at the phyla level}
+
+Summary_Temp <- summarySE(dat_2fold_FDR_Temp, measurevar="Abundance", groupvars=c("Phylum", "Sample_Depth", "Temperature"))
+Summary_Temp
+
+ 
+
+Summary_Temp<-dplyr::arrange(Summary_Temp,Phylum, Abundance)
+
+Summary_Temp$Phylum <- factor(Summary_Temp$Phylum,
+                         levels=(unique(Summary_Temp$Phylum)))
+
+#Check for weird names and make Rare taxa name better.
+levels(Summary_Temp$Phylum)
+
+#Rename levels
+levels(Summary_Temp$Phylum) = c("Acidobacteria",
+                           "Actinobacteria", 
+                   "Bacteroidetes",
+                   "Chloroflexi",
+                   "Cyanobacteria",
+                   "Euryarchaeota",
+                   "Marinimicrobia",
+                   "Planctomycetes",
+                   "Proteobacteria",
+                   "Rare Taxa (<1%)",
+                   "Thaumarchaeota",
+                   "Verrucomicrobia")
+
+levels(Summary_Temp$Phylum) #Check to make sure it worked
+
+#Save as table for ease of reading.
+write.csv(Summary_Temp, file = "Ordered_summary_Temp.csv")
+
+Phylum_colour_list = c(Acidobacteria = "red", Actinobacteria = "green", Bacteroidetes = "steelblue", Chlamydiae = "navy", Chloroflexi = "grey",Cyanobacteria = "purple", Euryarchaeota = "aquamarine", Firmicutes = "magenta", Marinimicrobia = "magenta", Parcubacteria = "orange", Planctomycetes = "wheat", Proteobacteria = "olivedrab",Thaumarchaeota = "firebrick", Verrucomicrobia = "tan", "Rare Taxa (<1%)" = "black")
+  
+  
+Summary_plot_Temp<-ggplot(Summary_Temp, 
+                        aes(x=as.numeric(as.character(Sample_Depth)), 
+                            y=Abundance*100, 
+                            colour=Phylum))+ 
+  geom_line(stat = "identity") + 
+  geom_errorbar(aes(ymin=(Abundance-se)*100, 
+                    ymax=(Abundance+se)*100), 
+                colour="black"#, 
+                #position=pd
+                )+
+  theme_bw()+
+  theme(legend.position = "right", 
+        strip.background = element_blank())+
+  xlab("Sample Depth (m)")+
+  ylab("Mean relative abundance")+
+  scale_colour_manual("Phylum", values = Phylum_colour_list)+
+  coord_flip()+
+  scale_x_reverse()
+
+
+Summary_plot_Temp
+
+dev.copy(png, "Significant_phylum_EdgeR_Temp", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+
+```
+```{r EdgeR significance vs nonsignificance - Temperature}
+
+library(ggplot2)
+library(plyr)
+library(phyloseq)
+
+# get abundance in %
+Sample_counts_Temp <- transform_sample_counts(Fiord_phyloseq_Vert, function(x) x/sum(x))
+
+# agglomerate taxa
+glom_Temp <- tax_glom(Sample_counts_Temp, taxrank = 'Genus')
+
+# create dataframe from phyloseq object
+dat_Temp <- psmelt(glom_Temp)
+
+
+# convert Phylum to a character vector from a factor because R
+dat_Temp$Genus <- as.character(dat_Temp$Genus)
+
+#Convert to character, as R
+Significant_taxa_Temp <- as.character(keepTaxa_FDR_Temp)
+
+#Change the name of the significant organisms
+dat_Temp[dat_Temp$Genus %in% Significant_taxa_Temp,]$Genus <- 'Significant'
+
+#Extract the significant organisms into a new df
+Significant_df_Temp = subset(dat_Temp, Genus == "Significant")
+
+#Make a function the opposite of %in%
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+#Rename the non-significant organisms
+dat_Temp[dat_Temp$Genus %!in% Significant_df_Temp,]$Genus <- 'Nonsignificant'
+
+#Extract the non-significant organisms
+Nonsignificant_df_Temp = subset(dat_Temp, Genus == "Nonsignificant")
+
+#Merge the significant and non-significant dfs together
+plotsign.vs.nonSign_Temp = rbind(Nonsignificant_df_Temp, Significant_df_Temp)
+
+#Plot
+plotme_Temp = ggplot(plotsign.vs.nonSign_Temp,
+       aes(x = Genus, y = (..count..)/sum(..count..)), stat = "count") + 
+  geom_bar() +
+  ylab("Number of genera (%)")+
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+
+  scale_x_discrete(labels=c("Nonsignificant" = "Non-significant", "Significant" = "Significant"))
+
+plotme_Temp
+
+dev.copy(png, "Sign.vs.NonSign_Temp", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#How many significant vs. non-significant?
+summary(as.factor(plotsign.vs.nonSign_Temp$Genus))
+
+#Total number of sample
+ 20892       +     7296
+#28188
+
+#Ratio of significant
+7296/28188
+#25.9%
+
+#Ratio of non-significant
+20892/28188
+#74.1
+```
+
+#Significant correlations between phyla
+```{r Significant correlations between phyla - mantel test}
+library(vegan)
+
+Bacteroidetes_df = subset(Summary, Phylum == "Bacteroidetes")
+Proteobacteria_df = subset(Summary, Phylum == "Proteobacteria")
+Verrucomicrobia_df = subset(Summary, Phylum == "Verrucomicrobia")
+Thaumarchaeota_df = subset(Summary, Phylum == "Thaumarchaeota")
+
+Bacteroidetes.dist = dist(Bacteroidetes_df[,c(2,4)])
+Proteobacteria.dist = dist(Proteobacteria_df[,c(2,4)])
+Verrucomicrobia.dist = dist(Verrucomicrobia_df[,c(2,4)])
+Thaumarchaeota.dist = dist(Thaumarchaeota_df[,c(2,4)])
+
+mantel(Proteobacteria.dist,
+       Bacteroidetes.dist,
+       permutations = 999)
+
+mantel(Proteobacteria.dist,
+       Verrucomicrobia.dist,
+       permutations = 999)
+
+mantel(Verrucomicrobia.dist,
+       Bacteroidetes.dist,
+       permutations = 999)
+
+mantel(Thaumarchaeota.dist,
+       Proteobacteria.dist,
+       permutations = 999)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

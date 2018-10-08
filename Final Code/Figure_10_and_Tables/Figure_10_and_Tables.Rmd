@@ -1,0 +1,3270 @@
+---
+title: "NMDS_plots"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Make phyloseq object as described in figure 3.
+
+```{r Other phyloseq objects}
+Fiord_phyloseq_Hor = subset_samples(Fiord_phyloseq, !Sample_type == "in" & !Sample_type == "out")
+Fiord_phyloseq_Hor_Surface = subset_samples(Fiord_phyloseq, Sample_type == "Transverse" &!Sample_Depth == "10" & !Sample_Depth == "40" & !Sample_Depth == "100" & !Sample_Depth == "200" & !Sample_Depth == "360")
+Fiord_phyloseq_Hor_10m = subset_samples(Fiord_phyloseq, Sample_type == "Transverse" &!Sample_Depth == "0" &!Sample_Depth == "1" & !Sample_Depth == "40" & !Sample_Depth == "100" & !Sample_Depth == "200" & !Sample_Depth == "360")
+
+Fiord_phyloseq_Vert = subset_samples(Fiord_phyloseq, !Sample_type == "in" & !Sample_type == "out")
+Fiord_phyloseq_Vert = subset_samples(Fiord_phyloseq_Vert, Sample_Site == "L5")
+```
+#Make NMDS plots
+```{r Across multiple fjords}
+
+NMDS.ord_inout <- ordinate(Fiord_phyloseq_in_out, method = "NMDS", distance = "bray")
+sample_data(Fiord_phyloseq_in_out)$Sample_Depth<-as.factor(sample_data(Fiord_phyloseq_in_out)$Sample_Depth)
+
+Sample_type_depth = c(Bin0 = 2, Bin10 = 0, Bout0 =17, Bout10 = 15, 
+                      Cin0 =2, Cin10 = 0, Cout0 =17, Cout10 = 15,
+                      Doin0 =2, Doin10 = 0, Doout0 =17, Doout10 = 15,
+                      Duin0 =2, Duin10 = 0, Duout0 =17, Duout10 = 15,
+                      Win0 =2, Win10 = 0, Wout0 =17, Wout10 = 15)
+
+Sample_site = c(Bin0 = "red", Bin10 = "red", Bout0 = "red", Bout10 = "red", Cin0 = "green", Cin10 = "green", Cout0 = "green", Cout10 = "green",Doin0 = "black", Doin10 = "black", Doout0 = "black", Doout10 = "black",Duin0 = "blue", Duin10 = "blue", Duout0 = "blue", Duout10 = "blue",Win0 = "purple", Win10 = "purple", Wout0 = "purple", Wout10 = "purple")
+
+
+sampleplot = plot_ordination(Fiord_phyloseq_in_out, NMDS.ord_inout, shape = "New_Name", color = "New_Name") + 
+ scale_shape_manual("Sample location", values=Sample_type_depth, labels = c("In0","In10", "Out0", "Out10")) + 
+  scale_colour_manual(values = Sample_site)+#, breaks = c("red", "green", "black", "blue", "purple"))+
+  theme(legend.position = "right")
+#open triangle = in0
+#open square = in10
+#closed triangle = out0
+#closed square = out10
+#red = Breaksea
+#green = Chalky
+#black = Doubtful
+#Blue = Dusky
+#Purple = Wet_Jacket
+sampleplot
+
+dev.copy(png,"Sampleplot_triangle",width = 500, height = 350)
+dev.off()
+```
+```{r Across Long Sound at the surface}
+NMDS.ord_Surface <- ordinate(Fiord_phyloseq_Hor_Surface, method = "NMDS", distance = "bray")
+#Stress = 0.065 - Very good stress
+
+sample_data(Fiord_phyloseq_Hor_Surface)$Sample_Depth<-as.factor(sample_data(Fiord_phyloseq_Hor_Surface)$Sample_Depth)
+
+Sample_type_depth = c(Bin0 = 1, Bin10 = 0, Bout0 = 16, Bout10 = 15, Cin0 = 1, Cin10 = 0, Cout0 = 16, Cout10 = 15,Doin0 = 1, Doin10 = 0, Doout0 = 16, Doout10 = 15,Duin0 = 1, Duin10 = 0, Duout0 = 16, Duout10 = 15,Win0 = 1, Win10 = 0, Wout0 = 16, Wout10 = 15)
+
+Sample_site_shape = c(L1 = 0, L2 = 1, L3 = 2, L4 = 5, L5 = 15, L6 = 16, L7 = 17, L8 = 18)
+
+Depth_colour_list = c("0" = "red", "1" = "red", "10" = "blue")
+
+NMDS_surface = plot_ordination(Fiord_phyloseq_Hor_Surface, 
+                             NMDS.ord_Hor, 
+                             shape = "Sample_Site", 
+                             color = "Sample_Depth") + 
+  scale_shape_manual("Sample Site", 
+                     values = Number_shape_list,
+                     guide = F)+
+  scale_color_manual("Sample Depth", values = Depth_colour_list, breaks = c("0", "10"), labels = c("0", "10"))+
+  theme(legend.position = "right")+
+  geom_point(size = 4)
+
+NMDS_surface
+
+dev.copy(png,"NMDSplot_Surface",units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+
+```
+```{r Across Long Sound at 10 m}
+
+NMDS.ord_10m <- ordinate(Fiord_phyloseq_Hor_10m, method = "NMDS", distance = "bray")
+#Stress = 0.000088 - Very good stress
+
+sample_data(Fiord_phyloseq_Hor_10m)$Sample_Depth<-as.factor(sample_data(Fiord_phyloseq_Hor_10m)$Sample_Depth)
+
+Sample_type_depth = c(Bin0 = 1, Bin10 = 0, Bout0 = 16, Bout10 = 15, Cin0 = 1, Cin10 = 0, Cout0 = 16, Cout10 = 15,Doin0 = 1, Doin10 = 0, Doout0 = 16, Doout10 = 15,Duin0 = 1, Duin10 = 0, Duout0 = 16, Duout10 = 15,Win0 = 1, Win10 = 0, Wout0 = 16, Wout10 = 15)
+
+Sample_site_shape = c(L1 = 0, L2 = 1, L3 = 2, L4 = 5, L5 = 15, L6 = 16, L7 = 17, L8 = 18)
+
+Depth_colour_list = c("0" = "red", "1" = "red", "10" = "blue")
+
+NMDS_10m = plot_ordination(Fiord_phyloseq_Hor_10m, 
+                             NMDS.ord_Hor, 
+                             shape = "Sample_Site", 
+                             color = "Sample_Depth") + 
+  scale_shape_manual("Sample Site", 
+                     values = Number_shape_list,
+                     guide = F)+
+  scale_color_manual("Sample Depth", values = Depth_colour_list, breaks = c("0", "10"), labels = c("0", "10"))+
+  theme(legend.position = "right")+
+  geom_point(size = 4)
+
+NMDS_10m
+
+dev.copy(png,"NMDSplot_Hor_10m",units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+```
+```{r Long Sound vertical profile}
+
+NMDS.ord_Vert <- ordinate(Fiord_phyloseq_Vert, method = "NMDS", distance = "bray")
+sample_data(Fiord_phyloseq_Vert)$Sample_Depth<-as.factor(sample_data(Fiord_phyloseq_Vert)$Sample_Depth)
+
+Depth_colour_list = c("0" = "red", "10" = "blue", "40" = "grey", "100" = "green", "200" = "black", "360" = "magenta")
+
+
+sampleplot = plot_ordination(Fiord_phyloseq_Vert, NMDS.ord_Vert, color = "Sample_Depth") +
+  scale_colour_manual("Sample Depth \n (m)", values = Depth_colour_list) +
+  theme(legend.position = "right")+
+  geom_point(position = position_jitter(h=0.1,w=0.1))
+  
+
+sampleplot
+
+dev.copy(png,"NMDSplot_Vert",units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Table 1 - Across Multiple Fjords
+```{r Add NMDS1 coordinates to mapping file (alpha_meta_inout)}
+#Extract coordinates by axis
+SiteNMDScoordinates = NMDS.ord_inout$points
+
+#Save a pristine copy in case of fuck up
+alpha_meta_in_out_v0 = alpha_meta_in_out
+
+#Bind NMDS columns to dataframe
+forspearman0 = cbind(alpha_meta_in_out, SiteNMDScoordinates)
+
+#Import alpha meta with CTD
+CTDwithalpha_meta = read.csv("/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_4/alpha_meta_summary_inout_wh_CTD.csv")
+
+#Bind CTD data to dataframe
+forspearman1 = cbind(forspearman0, CTDwithalpha_meta$Salinity)
+forspearman2 = cbind(forspearman1, CTDwithalpha_meta$Temperature)
+forspearman = cbind(forspearman2, CTDwithalpha_meta$OxygenPerSat)
+
+#Rename CTD data
+colnames(forspearman)[which(names(forspearman) == "CTDwithalpha_meta$Salinity")] <- "Salinity"
+colnames(forspearman)[which(names(forspearman) == "CTDwithalpha_meta$Temperature")] <- "Temperature"
+colnames(forspearman)[which(names(forspearman) == "CTDwithalpha_meta$OxygenPerSat")] <- "OxygenPerSat"
+
+#Convert the last obstinate factors (depth) to a numeric.
+forspearman$Sample_Depth <- as.numeric(as.character(forspearman$Sample_Depth))
+
+#Remove non-numeric things.
+forspearman_numericonly = forspearman[,-c(4:11,44,46,48:86)]
+forspearman_numericonly_location = forspearman[,-c(4:11,44,46,48:86)]
+
+forspearmanv0 = forspearman
+library(tidyverse)
+forspearman$Sample_location = paste(forspearman$Sample_Depth, forspearman$Sample_type)
+
+write.csv(forspearman_numericonly_location, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2/forspearman_numeric_location.csv")
+
+```
+```{r Spearman and p-value determination}
+#Make a df to add rho and p-value to.
+library(tibble)
+Rho_p.value_fixed_df = data.frame("Variable 1" = NA, "Variable 2" = 0, "rho value" = 0, "p.value" = 0)
+
+
+#Carry out spearman - Observed
+spearman_Observed = cor.test(forspearman$MDS1, forspearman$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df[1,1] = "NMDS1"
+Rho_p.value_fixed_df[1,2] = "Observed"
+Rho_p.value_fixed_df[1,3] = spearman_Observed$estimate 
+Rho_p.value_fixed_df[1,4] = spearman_Observed$p.value  
+
+
+#Carry out spearman - Shannon
+spearman_Shannon = cor.test(forspearman$MDS1, forspearman$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df[2,1] = "NMDS1"
+Rho_p.value_fixed_df[2,2] = "Shannon"
+Rho_p.value_fixed_df[2,3] = spearman_Shannon$estimate 
+Rho_p.value_fixed_df[2,4] = spearman_Shannon$p.value  
+
+#Carry out spearman - Pielou
+spearman_Pielou = cor.test(forspearman$MDS1, forspearman$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df[3,1] = "NMDS1"
+Rho_p.value_fixed_df[3,2] = "Pielou"
+Rho_p.value_fixed_df[3,3] = spearman_Pielou$estimate
+Rho_p.value_fixed_df[3,4] = spearman_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist = dist(forspearman$Pielou)
+Pielou_mantel = mantel(MDS1_mantel.dist,Pielou.dist, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_beta_Methyl_D_Glucoside = cor.test(forspearman$MDS1, forspearman$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df[4,1] = "NMDS1"
+Rho_p.value_fixed_df[4,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df[4,3] = spearman_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df[4,4] = spearman_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist = dist(forspearman$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(MDS1_mantel.dist,beta_Methyl_D_Glucoside.dist, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_DGalactonic_Acid_gamma_Lactone = cor.test(forspearman$MDS1, forspearman$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df[5,1] = "NMDS1"
+Rho_p.value_fixed_df[5,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df[5,3] = spearman_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df[5,4] = spearman_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_LArginine = cor.test(forspearman$MDS1, forspearman$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df[6,1] = "NMDS1"
+Rho_p.value_fixed_df[6,2] = "LArginine"
+Rho_p.value_fixed_df[6,3] = spearman_LArginine$estimate 
+Rho_p.value_fixed_df[6,4] = spearman_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_Pyruvic_Acid_Methyl_Ester = cor.test(forspearman$MDS1, forspearman$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df[7,1] = "NMDS1"
+Rho_p.value_fixed_df[7,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df[7,3] = spearman_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df[7,4] = spearman_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_DXylose = cor.test(forspearman$MDS1, forspearman$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df[8,1] = "NMDS1"
+Rho_p.value_fixed_df[8,2] = "DXylose"
+Rho_p.value_fixed_df[8,3] = spearman_DXylose$estimate  
+Rho_p.value_fixed_df[8,4] = spearman_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_DGalacturonic_Acid = cor.test(forspearman$MDS1, forspearman$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df[9,1] = "NMDS1"
+Rho_p.value_fixed_df[9,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df[9,3] = spearman_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df[9,4] = spearman_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_LAsparagine = cor.test(forspearman$MDS1, forspearman$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df[10,1] = "NMDS1"
+Rho_p.value_fixed_df[10,2] = "LAsparagine"
+Rho_p.value_fixed_df[10,3] = spearman_LAsparagine$estimate
+Rho_p.value_fixed_df[10,4] = spearman_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_Tween_40 = cor.test(forspearman$MDS1, forspearman$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df[11,1] = "NMDS1"
+Rho_p.value_fixed_df[11,2] = "Tween_40"
+Rho_p.value_fixed_df[11,3] = spearman_Tween_40$estimate 
+Rho_p.value_fixed_df[11,4] = spearman_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_i_Erythritol = cor.test(forspearman$MDS1, forspearman$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df[12,1] = "NMDS1"
+Rho_p.value_fixed_df[12,2] = "i_Erythritol"
+Rho_p.value_fixed_df[12,3] = spearman_i_Erythritol$estimate  
+Rho_p.value_fixed_df[12,4] = spearman_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_X2_Hydroxy_Benzoic_Acid = cor.test(forspearman$MDS1, forspearman$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[13,1] = "NMDS1"
+Rho_p.value_fixed_df[13,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[13,3] = spearman_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df[13,4] = spearman_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_L_Phenylalanine = cor.test(forspearman$MDS1, forspearman$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df[14,1] = "NMDS1"
+Rho_p.value_fixed_df[14,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df[14,3] = spearman_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df[14,4] = spearman_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_Tween_80 = cor.test(forspearman$MDS1, forspearman$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df[15,1] = "NMDS1"
+Rho_p.value_fixed_df[15,2] = "Tween_80"
+Rho_p.value_fixed_df[15,3] = spearman_Tween_80$estimate 
+Rho_p.value_fixed_df[15,4] = spearman_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_DMannitol = cor.test(forspearman$MDS1, forspearman$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df[16,1] = "NMDS1"
+Rho_p.value_fixed_df[16,2] = "DMannitol"
+Rho_p.value_fixed_df[16,3] = spearman_DMannitol$estimate 
+Rho_p.value_fixed_df[16,4] = spearman_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_X4Hydroxy_Benzoic_Acid = cor.test(forspearman$MDS1, forspearman$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[17,1] = "NMDS1"
+Rho_p.value_fixed_df[17,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[17,3] = spearman_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df[17,4] = spearman_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_LSerine = cor.test(forspearman$MDS1, forspearman$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df[18,1] = "NMDS1"
+Rho_p.value_fixed_df[18,2] = "LSerine"
+Rho_p.value_fixed_df[18,3] = spearman_LSerine$estimate 
+Rho_p.value_fixed_df[18,4] = spearman_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_alpha_Cyclodextrin = cor.test(forspearman$MDS1, forspearman$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df[19,1] = "NMDS1"
+Rho_p.value_fixed_df[19,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df[19,3] = spearman_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df[19,4] = spearman_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_Nacetyl_DGlucosamine = cor.test(forspearman$MDS1, forspearman$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df[20,1] = "NMDS1"
+Rho_p.value_fixed_df[20,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df[20,3] = spearman_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df[20,4] = spearman_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_gamma_Hydroxybutyric_Acid = cor.test(forspearman$MDS1, forspearman$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df[21,1] = "NMDS1"
+Rho_p.value_fixed_df[21,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df[21,3] = spearman_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df[21,4] = spearman_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_L_Threonine = cor.test(forspearman$MDS1, forspearman$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df[22,1] = "NMDS1"
+Rho_p.value_fixed_df[22,2] = "L_Threonine"
+Rho_p.value_fixed_df[22,3] = spearman_L_Threonine$estimate 
+Rho_p.value_fixed_df[22,4] = spearman_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_Glycogen = cor.test(forspearman$MDS1, forspearman$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df[23,1] = "NMDS1"
+Rho_p.value_fixed_df[23,2] = "Glycogen"
+Rho_p.value_fixed_df[23,3] = spearman_Glycogen$estimate 
+Rho_p.value_fixed_df[23,4] = spearman_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_DGlucosaminic_Acid = cor.test(forspearman$MDS1, forspearman$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df[24,1] = "NMDS1"
+Rho_p.value_fixed_df[24,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df[24,3] = spearman_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df[24,4] = spearman_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_Itaconic_Acid = cor.test(forspearman$MDS1, forspearman$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df[25,1] = "NMDS1"
+Rho_p.value_fixed_df[25,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df[25,3] = spearman_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df[25,4] = spearman_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_Glycyl_LGlutamic_Acid = cor.test(forspearman$MDS1, forspearman$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df[26,1] = "NMDS1"
+Rho_p.value_fixed_df[26,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df[26,3] = spearman_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df[26,4] = spearman_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_DCellobiose = cor.test(forspearman$MDS1, forspearman$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df[27,1] = "NMDS1"
+Rho_p.value_fixed_df[27,2] = "DCellobiose"
+Rho_p.value_fixed_df[27,3] = spearman_DCellobiose$estimate 
+Rho_p.value_fixed_df[27,4] = spearman_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_Glucos_1Phosphate = cor.test(forspearman$MDS1, forspearman$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df[28,1] = "NMDS1"
+Rho_p.value_fixed_df[28,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df[28,3] = spearman_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df[28,4] = spearman_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_alpha_Ketobutyric_Acid = cor.test(forspearman$MDS1, forspearman$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df[29,1] = "NMDS1"
+Rho_p.value_fixed_df[29,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df[29,3] = spearman_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df[29,4] = spearman_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_Phenylethyl_amine = cor.test(forspearman$MDS1, forspearman$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df[30,1] = "NMDS1"
+Rho_p.value_fixed_df[30,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df[30,3] = spearman_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df[30,4] = spearman_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_alpha_DLactose = cor.test(forspearman$MDS1, forspearman$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df[31,1] = "NMDS1"
+Rho_p.value_fixed_df[31,2] = "alpha_DLactose"
+Rho_p.value_fixed_df[31,3] = spearman_alpha_DLactose$estimate 
+Rho_p.value_fixed_df[31,4] = spearman_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_DL_alpha_Glycerol_Phosphate = cor.test(forspearman$MDS1, forspearman$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df[32,1] = "NMDS1"
+Rho_p.value_fixed_df[32,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df[32,3] = spearman_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df[32,4] = spearman_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_DMalic_Acid = cor.test(forspearman$MDS1, forspearman$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df[33,1] = "NMDS1"
+Rho_p.value_fixed_df[33,2] = "DMalic_Acid"
+Rho_p.value_fixed_df[33,3] = spearman_DMalic_Acid$estimate 
+Rho_p.value_fixed_df[33,4] = spearman_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_Putrescine = cor.test(forspearman$MDS1, forspearman$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df[34,1] = "NMDS1"
+Rho_p.value_fixed_df[34,2] = "Putrescine"
+Rho_p.value_fixed_df[34,3] = spearman_Putrescine$estimate 
+Rho_p.value_fixed_df[34,4] = spearman_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_Bacterial_abundance = cor.test(forspearman$MDS1, forspearman$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df[35,1] = "NMDS1"
+Rho_p.value_fixed_df[35,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df[35,3] = spearman_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df[35,4] = spearman_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_Bacterial_activity = cor.test(forspearman$MDS1, forspearman$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df[36,1] = "NMDS1"
+Rho_p.value_fixed_df[36,2] = "Bacterial_activity"
+Rho_p.value_fixed_df[36,3] = spearman_Bacterial_activity$estimate 
+Rho_p.value_fixed_df[36,4] = spearman_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_Sample_Depth = cor.test(forspearman$MDS1, forspearman$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df[37,1] = "NMDS1"
+Rho_p.value_fixed_df[37,2] = "Sample_Depth"
+Rho_p.value_fixed_df[37,3] = spearman_Sample_Depth$estimate 
+Rho_p.value_fixed_df[37,4] = spearman_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_Sample_Site = cor.test(forspearman$MDS1, forspearman$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df[38,1] = "NMDS1"
+Rho_p.value_fixed_df[38,2] = "Sample_Site"
+Rho_p.value_fixed_df[38,3] = spearman_Sample_Site$estimate 
+Rho_p.value_fixed_df[38,4] = spearman_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_Salinity = cor.test(forspearman$MDS1, forspearman$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df[39,1] = "NMDS1"
+Rho_p.value_fixed_df[39,2] = "Salinity"
+Rho_p.value_fixed_df[39,3] = spearman_Salinity$estimate 
+Rho_p.value_fixed_df[39,4] = spearman_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_OxygenPerSat = cor.test(forspearman$MDS1, forspearman$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df[40,1] = "NMDS1"
+Rho_p.value_fixed_df[40,2] = "OxygenPerSat"
+Rho_p.value_fixed_df[40,3] = spearman_OxygenPerSat$estimate 
+Rho_p.value_fixed_df[40,4] = spearman_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_Temperature = cor.test(forspearman$MDS1, forspearman$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df[41,1] = "NMDS1"
+Rho_p.value_fixed_df[41,2] = "Temperature"
+Rho_p.value_fixed_df[41,3] = spearman_Temperature$estimate 
+Rho_p.value_fixed_df[41,4] = spearman_Temperature$p.value 
+
+```
+```{r NMDS 2}
+#Carry out spearman - Observed
+spearman_Observed = cor.test(forspearman$MDS2, forspearman$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df[42,1] = "NMDS2"
+Rho_p.value_fixed_df[42,2] = "Observed"
+Rho_p.value_fixed_df[42,3] = spearman_Observed$estimate 
+Rho_p.value_fixed_df[42,4] = spearman_Observed$p.value  
+#Mantel - Observed
+Observed.dist = dist(forspearman$Observed)
+Observed_mantel = mantel(NMDS2_mantel.dist,Observed.dist, permutations = 999 )
+Observed_mantel #Would want to use the 95% one.
+
+#Carry out spearman - Shannon
+spearman_Shannon = cor.test(forspearman$MDS2, forspearman$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df[43,1] = "NMDS2"
+Rho_p.value_fixed_df[43,2] = "Shannon"
+Rho_p.value_fixed_df[43,3] = spearman_Shannon$estimate 
+Rho_p.value_fixed_df[43,4] = spearman_Shannon$p.value  
+#Mantel - Shannon
+Shannon.dist = dist(forspearman$Shannon)
+Shannon_mantel = mantel(NMDS2_mantel.dist,Shannon.dist, permutations = 999 )
+Shannon_mantel
+
+#Carry out spearman - Pielou
+spearman_Pielou = cor.test(forspearman$MDS2, forspearman$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df[44,1] = "NMDS2"
+Rho_p.value_fixed_df[44,2] = "Pielou"
+Rho_p.value_fixed_df[44,3] = spearman_Pielou$estimate
+Rho_p.value_fixed_df[44,4] = spearman_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist = dist(forspearman$Pielou)
+Pielou_mantel = mantel(NMDS2_mantel.dist,Pielou.dist, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_beta_Methyl_D_Glucoside = cor.test(forspearman$MDS2, forspearman$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df[45,1] = "NMDS2"
+Rho_p.value_fixed_df[45,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df[45,3] = spearman_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df[45,4] = spearman_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist = dist(forspearman$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(NMDS2_mantel.dist,beta_Methyl_D_Glucoside.dist, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_DGalactonic_Acid_gamma_Lactone = cor.test(forspearman$MDS2, forspearman$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df[46,1] = "NMDS2"
+Rho_p.value_fixed_df[46,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df[46,3] = spearman_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df[46,4] = spearman_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_LArginine = cor.test(forspearman$MDS2, forspearman$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df[47,1] = "NMDS2"
+Rho_p.value_fixed_df[47,2] = "LArginine"
+Rho_p.value_fixed_df[47,3] = spearman_LArginine$estimate 
+Rho_p.value_fixed_df[47,4] = spearman_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_Pyruvic_Acid_Methyl_Ester = cor.test(forspearman$MDS2, forspearman$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df[48,1] = "NMDS2"
+Rho_p.value_fixed_df[48,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df[48,3] = spearman_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df[48,4] = spearman_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_DXylose = cor.test(forspearman$MDS2, forspearman$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df[49,1] = "NMDS2"
+Rho_p.value_fixed_df[49,2] = "DXylose"
+Rho_p.value_fixed_df[49,3] = spearman_DXylose$estimate  
+Rho_p.value_fixed_df[49,4] = spearman_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_DGalacturonic_Acid = cor.test(forspearman$MDS2, forspearman$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df[50,1] = "NMDS2"
+Rho_p.value_fixed_df[50,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df[50,3] = spearman_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df[50,4] = spearman_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_LAsparagine = cor.test(forspearman$MDS2, forspearman$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df[51,1] = "NMDS2"
+Rho_p.value_fixed_df[51,2] = "LAsparagine"
+Rho_p.value_fixed_df[51,3] = spearman_LAsparagine$estimate
+Rho_p.value_fixed_df[51,4] = spearman_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_Tween_40 = cor.test(forspearman$MDS2, forspearman$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df[52,1] = "NMDS2"
+Rho_p.value_fixed_df[52,2] = "Tween_40"
+Rho_p.value_fixed_df[52,3] = spearman_Tween_40$estimate 
+Rho_p.value_fixed_df[52,4] = spearman_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_i_Erythritol = cor.test(forspearman$MDS2, forspearman$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df[53,1] = "NMDS2"
+Rho_p.value_fixed_df[53,2] = "i_Erythritol"
+Rho_p.value_fixed_df[53,3] = spearman_i_Erythritol$estimate  
+Rho_p.value_fixed_df[53,4] = spearman_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_X2_Hydroxy_Benzoic_Acid = cor.test(forspearman$MDS2, forspearman$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[54,1] = "NMDS2"
+Rho_p.value_fixed_df[54,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[54,3] = spearman_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df[54,4] = spearman_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_L_Phenylalanine = cor.test(forspearman$MDS2, forspearman$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df[55,1] = "NMDS2"
+Rho_p.value_fixed_df[55,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df[55,3] = spearman_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df[55,4] = spearman_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_Tween_80 = cor.test(forspearman$MDS2, forspearman$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df[56,1] = "NMDS2"
+Rho_p.value_fixed_df[56,2] = "Tween_80"
+Rho_p.value_fixed_df[56,3] = spearman_Tween_80$estimate 
+Rho_p.value_fixed_df[56,4] = spearman_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_DMannitol = cor.test(forspearman$MDS2, forspearman$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df[57,1] = "NMDS2"
+Rho_p.value_fixed_df[57,2] = "DMannitol"
+Rho_p.value_fixed_df[57,3] = spearman_DMannitol$estimate 
+Rho_p.value_fixed_df[57,4] = spearman_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_X4Hydroxy_Benzoic_Acid = cor.test(forspearman$MDS2, forspearman$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[58,1] = "NMDS2"
+Rho_p.value_fixed_df[58,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[58,3] = spearman_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df[58,4] = spearman_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_LSerine = cor.test(forspearman$MDS2, forspearman$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df[59,1] = "NMDS2"
+Rho_p.value_fixed_df[59,2] = "LSerine"
+Rho_p.value_fixed_df[59,3] = spearman_LSerine$estimate 
+Rho_p.value_fixed_df[59,4] = spearman_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_alpha_Cyclodextrin = cor.test(forspearman$MDS2, forspearman$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df[60,1] = "NMDS2"
+Rho_p.value_fixed_df[60,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df[60,3] = spearman_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df[60,4] = spearman_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_Nacetyl_DGlucosamine = cor.test(forspearman$MDS2, forspearman$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df[61,1] = "NMDS2"
+Rho_p.value_fixed_df[61,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df[61,3] = spearman_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df[61,4] = spearman_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_gamma_Hydroxybutyric_Acid = cor.test(forspearman$MDS2, forspearman$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df[62,1] = "NMDS2"
+Rho_p.value_fixed_df[62,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df[62,3] = spearman_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df[62,4] = spearman_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_L_Threonine = cor.test(forspearman$MDS2, forspearman$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df[63,1] = "NMDS2"
+Rho_p.value_fixed_df[63,2] = "L_Threonine"
+Rho_p.value_fixed_df[63,3] = spearman_L_Threonine$estimate 
+Rho_p.value_fixed_df[63,4] = spearman_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_Glycogen = cor.test(forspearman$MDS2, forspearman$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df[64,1] = "NMDS2"
+Rho_p.value_fixed_df[64,2] = "Glycogen"
+Rho_p.value_fixed_df[64,3] = spearman_Glycogen$estimate 
+Rho_p.value_fixed_df[64,4] = spearman_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_DGlucosaminic_Acid = cor.test(forspearman$MDS2, forspearman$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df[65,1] = "NMDS2"
+Rho_p.value_fixed_df[65,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df[65,3] = spearman_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df[65,4] = spearman_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_Itaconic_Acid = cor.test(forspearman$MDS2, forspearman$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df[66,1] = "NMDS2"
+Rho_p.value_fixed_df[66,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df[66,3] = spearman_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df[66,4] = spearman_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_Glycyl_LGlutamic_Acid = cor.test(forspearman$MDS2, forspearman$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df[67,1] = "NMDS2"
+Rho_p.value_fixed_df[67,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df[67,3] = spearman_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df[67,4] = spearman_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_DCellobiose = cor.test(forspearman$MDS2, forspearman$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df[68,1] = "NMDS2"
+Rho_p.value_fixed_df[68,2] = "DCellobiose"
+Rho_p.value_fixed_df[68,3] = spearman_DCellobiose$estimate 
+Rho_p.value_fixed_df[68,4] = spearman_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_Glucos_1Phosphate = cor.test(forspearman$MDS2, forspearman$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df[69,1] = "NMDS2"
+Rho_p.value_fixed_df[69,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df[69,3] = spearman_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df[69,4] = spearman_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_alpha_Ketobutyric_Acid = cor.test(forspearman$MDS2, forspearman$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df[70,1] = "NMDS2"
+Rho_p.value_fixed_df[70,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df[70,3] = spearman_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df[70,4] = spearman_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_Phenylethyl_amine = cor.test(forspearman$MDS2, forspearman$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df[71,1] = "NMDS2"
+Rho_p.value_fixed_df[71,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df[71,3] = spearman_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df[71,4] = spearman_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_alpha_DLactose = cor.test(forspearman$MDS2, forspearman$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df[72,1] = "NMDS2"
+Rho_p.value_fixed_df[72,2] = "alpha_DLactose"
+Rho_p.value_fixed_df[72,3] = spearman_alpha_DLactose$estimate 
+Rho_p.value_fixed_df[72,4] = spearman_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_DL_alpha_Glycerol_Phosphate = cor.test(forspearman$MDS2, forspearman$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df[73,1] = "NMDS2"
+Rho_p.value_fixed_df[73,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df[73,3] = spearman_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df[73,4] = spearman_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_DMalic_Acid = cor.test(forspearman$MDS2, forspearman$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df[74,1] = "NMDS2"
+Rho_p.value_fixed_df[74,2] = "DMalic_Acid"
+Rho_p.value_fixed_df[74,3] = spearman_DMalic_Acid$estimate 
+Rho_p.value_fixed_df[74,4] = spearman_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_Putrescine = cor.test(forspearman$MDS2, forspearman$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df[75,1] = "NMDS2"
+Rho_p.value_fixed_df[75,2] = "Putrescine"
+Rho_p.value_fixed_df[75,3] = spearman_Putrescine$estimate 
+Rho_p.value_fixed_df[75,4] = spearman_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_Bacterial_abundance = cor.test(forspearman$MDS2, forspearman$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df[76,1] = "NMDS2"
+Rho_p.value_fixed_df[76,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df[76,3] = spearman_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df[76,4] = spearman_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_Bacterial_activity = cor.test(forspearman$MDS2, forspearman$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df[77,1] = "NMDS2"
+Rho_p.value_fixed_df[77,2] = "Bacterial_activity"
+Rho_p.value_fixed_df[77,3] = spearman_Bacterial_activity$estimate 
+Rho_p.value_fixed_df[77,4] = spearman_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_Sample_Depth = cor.test(forspearman$MDS2, forspearman$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df[78,1] = "NMDS2"
+Rho_p.value_fixed_df[78,2] = "Sample_Depth"
+Rho_p.value_fixed_df[78,3] = spearman_Sample_Depth$estimate 
+Rho_p.value_fixed_df[78,4] = spearman_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_Sample_Site = cor.test(forspearman$MDS2, forspearman$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df[79,1] = "NMDS2"
+Rho_p.value_fixed_df[79,2] = "Sample_Site"
+Rho_p.value_fixed_df[79,3] = spearman_Sample_Site$estimate 
+Rho_p.value_fixed_df[79,4] = spearman_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_Salinity = cor.test(forspearman$MDS2, forspearman$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df[80,1] = "NMDS2"
+Rho_p.value_fixed_df[80,2] = "Salinity"
+Rho_p.value_fixed_df[80,3] = spearman_Salinity$estimate 
+Rho_p.value_fixed_df[80,4] = spearman_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_OxygenPerSat = cor.test(forspearman$MDS2, forspearman$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df[81,1] = "NMDS2"
+Rho_p.value_fixed_df[81,2] = "OxygenPerSat"
+Rho_p.value_fixed_df[81,3] = spearman_OxygenPerSat$estimate 
+Rho_p.value_fixed_df[81,4] = spearman_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_Temperature = cor.test(forspearman$MDS2, forspearman$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df[82,1] = "NMDS2"
+Rho_p.value_fixed_df[82,2] = "Temperature"
+Rho_p.value_fixed_df[82,3] = spearman_Temperature$estimate 
+Rho_p.value_fixed_df[82,4] = spearman_Temperature$p.value 
+
+
+
+
+```
+```{r adjusted p value}
+#Carry out bonferroni correction
+adjusted_p.value = p.adjust(Rho_p.value_fixed_df$p.value, method = "bonferroni")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value = as.data.frame(adjusted_p.value)
+
+#Bind adjusted p-value onto data frame
+Spearman = cbind(Rho_p.value_fixed_df, adjusted_p.value$adjusted_p.value)
+
+#Rename adjusted p value column
+colnames(Spearman)[which(names(Spearman) == "adjusted_p.value$adjusted_p.value")] <- "adjusted_p_value"
+
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2/Spearman_withsignificance_adjusted.csv")
+
+#Subset to only the statistically significant values
+onlysignificance = subset(Spearman, adjusted_p_value < 5e-2)
+
+#Extract the significant values
+write.csv(onlysignificance, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2/Spearman_student_onlysignificant.csv")
+
+```
+#Table 2 - Across Long Sound
+##Surface
+```{r Add NMDS1 coordinates to mapping file (alpha_meta_inout)}
+#Extract coordinates by axis
+SiteNMDScoordinates_surface = NMDS.ord_Surface$points
+
+#Make Fiord phyloseq surface into alpha_meta df
+#Dataframe for dissimialrity testing
+alpha_summary_surface <- estimate_richness(Fiord_phyloseq_Hor_Surface, measures = c("Observed", "Shannon"))
+Evenness_surface <- evenness(Fiord_phyloseq_Hor_Surface, 'pielou')
+alpha_summary_surface$Pielou <- Evenness_surface$pielou
+#combine with metadata
+alpha_meta_surface <- data.frame(alpha_summary_surface, sample_data(Fiord_phyloseq_Hor_Surface))
+alpha_meta_surface
+
+#Remove unit columns.
+alpha_meta_surface = alpha_meta_surface[,-c(4:9, 11, 44, 46, 48, 50:100)]
+
+#Bind NMDS columns to dataframe
+forspearman0 = cbind(alpha_meta_surface, SiteNMDScoordinates_surface)
+
+#Export and add CTD data
+write.csv(forspearman0, "Alpha_meta_all_surface.csv")
+
+#Import alpha meta with CTD
+Alpha_meta_all_surface = read.csv("Alpha_meta_all_surface.csv", row.names = 1)
+
+#Remove non-numeric columns
+alpha_meta_all_surface = subset(Alpha_meta_all_surface, select = -c(New_Name))
+
+#Convert the last obstinate factors (depth) to a numeric.
+alpha_meta_all_surface$Sample_Depth <- as.numeric(as.character(alpha_meta_all_surface$Sample_Depth))
+alpha_meta_all_surface$Observed <- as.numeric(as.character(alpha_meta_all_surface$Observed))
+alpha_meta_all_surface$Bacterial_abundance <- as.numeric(as.character(alpha_meta_all_surface$Bacterial_abundance))
+alpha_meta_all_surface$Sample_Site <- as.numeric(as.character(alpha_meta_all_surface$Sample_Site))
+
+```
+```{r Spearman and p-value at the surface}
+#Make a df to add rho and p-value to.
+library(tibble)
+Rho_p.value_fixed_df_surface = data.frame("Variable 1" = NA, "Variable 2" = 0, "rho value" = 0, "p.value" = 0)
+#row.names(Rho_p.value_fixed_df_surface_NMDS1) = colnames(alpha_meta_all_surface)
+  
+  #tibble::column_to_rownames(alpha_meta_all_surface)
+
+#Mantel for MDS1
+MDS1_mantel.dist = dist(alpha_meta_all_surface$MDS1)
+#Mantel for MDS2
+MDS2_mantel.dist = dist(alpha_meta_all_surface$MDS2)
+
+#Carry out spearman - Observed
+spearman_surface_Observed = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df_surface[1,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[1,2] = "Observed"
+Rho_p.value_fixed_df_surface[1,3] = spearman_surface_Observed$estimate 
+Rho_p.value_fixed_df_surface[1,4] = spearman_surface_Observed$p.value  
+
+
+#Carry out spearman - Shannon
+spearman_surface_Shannon = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df_surface[2,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[2,2] = "Shannon"
+Rho_p.value_fixed_df_surface[2,3] = spearman_surface_Shannon$estimate 
+Rho_p.value_fixed_df_surface[2,4] = spearman_surface_Shannon$p.value  
+
+
+#Carry out spearman - Pielou
+spearman_surface_Pielou = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df_surface[3,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[3,2] = "Pielou"
+Rho_p.value_fixed_df_surface[3,3] = spearman_surface_Pielou$estimate
+Rho_p.value_fixed_df_surface[3,4] = spearman_surface_Pielou$p.value
+
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_surface_beta_Methyl_D_Glucoside = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df_surface[4,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[4,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df_surface[4,3] = spearman_surface_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df_surface[4,4] = spearman_surface_beta_Methyl_D_Glucoside$p.value  
+
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_surface_DGalactonic_Acid_gamma_Lactone = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df_surface[5,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[5,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df_surface[5,3] = spearman_surface_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df_surface[5,4] = spearman_surface_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_surface_LArginine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df_surface[6,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[6,2] = "LArginine"
+Rho_p.value_fixed_df_surface[6,3] = spearman_surface_LArginine$estimate 
+Rho_p.value_fixed_df_surface[6,4] = spearman_surface_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_surface_Pyruvic_Acid_Methyl_Ester = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df_surface[7,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[7,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df_surface[7,3] = spearman_surface_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df_surface[7,4] = spearman_surface_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_surface_DXylose = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df_surface[8,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[8,2] = "DXylose"
+Rho_p.value_fixed_df_surface[8,3] = spearman_surface_DXylose$estimate  
+Rho_p.value_fixed_df_surface[8,4] = spearman_surface_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_surface_DGalacturonic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df_surface[9,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[9,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df_surface[9,3] = spearman_surface_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df_surface[9,4] = spearman_surface_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_surface_LAsparagine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df_surface[10,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[10,2] = "LAsparagine"
+Rho_p.value_fixed_df_surface[10,3] = spearman_surface_LAsparagine$estimate
+Rho_p.value_fixed_df_surface[10,4] = spearman_surface_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_surface_Tween_40 = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df_surface[11,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[11,2] = "Tween_40"
+Rho_p.value_fixed_df_surface[11,3] = spearman_surface_Tween_40$estimate 
+Rho_p.value_fixed_df_surface[11,4] = spearman_surface_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_surface_i_Erythritol = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df_surface[12,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[12,2] = "i_Erythritol"
+Rho_p.value_fixed_df_surface[12,3] = spearman_surface_i_Erythritol$estimate  
+Rho_p.value_fixed_df_surface[12,4] = spearman_surface_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_surface_X2_Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_surface[13,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[13,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_surface[13,3] = spearman_surface_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df_surface[13,4] = spearman_surface_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_surface_L_Phenylalanine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df_surface[14,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[14,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df_surface[14,3] = spearman_surface_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df_surface[14,4] = spearman_surface_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_surface_Tween_80 = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df_surface[15,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[15,2] = "Tween_80"
+Rho_p.value_fixed_df_surface[15,3] = spearman_surface_Tween_80$estimate 
+Rho_p.value_fixed_df_surface[15,4] = spearman_surface_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_surface_DMannitol = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df_surface[16,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[16,2] = "DMannitol"
+Rho_p.value_fixed_df_surface[16,3] = spearman_surface_DMannitol$estimate 
+Rho_p.value_fixed_df_surface[16,4] = spearman_surface_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_surface_X4Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_surface[17,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[17,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_surface[17,3] = spearman_surface_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df_surface[17,4] = spearman_surface_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_surface_LSerine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df_surface[18,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[18,2] = "LSerine"
+Rho_p.value_fixed_df_surface[18,3] = spearman_surface_LSerine$estimate 
+Rho_p.value_fixed_df_surface[18,4] = spearman_surface_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_surface_alpha_Cyclodextrin = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df_surface[19,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[19,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df_surface[19,3] = spearman_surface_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df_surface[19,4] = spearman_surface_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_surface_Nacetyl_DGlucosamine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df_surface[20,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[20,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df_surface[20,3] = spearman_surface_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df_surface[20,4] = spearman_surface_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_surface_gamma_Hydroxybutyric_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df_surface[21,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[21,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df_surface[21,3] = spearman_surface_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df_surface[21,4] = spearman_surface_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_surface_L_Threonine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df_surface[22,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[22,2] = "L_Threonine"
+Rho_p.value_fixed_df_surface[22,3] = spearman_surface_L_Threonine$estimate 
+Rho_p.value_fixed_df_surface[22,4] = spearman_surface_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_surface_Glycogen = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df_surface[23,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[23,2] = "Glycogen"
+Rho_p.value_fixed_df_surface[23,3] = spearman_surface_Glycogen$estimate 
+Rho_p.value_fixed_df_surface[23,4] = spearman_surface_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_surface_DGlucosaminic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df_surface[24,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[24,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df_surface[24,3] = spearman_surface_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df_surface[24,4] = spearman_surface_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_surface_Itaconic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df_surface[25,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[25,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df_surface[25,3] = spearman_surface_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df_surface[25,4] = spearman_surface_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_surface_Glycyl_LGlutamic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df_surface[26,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[26,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df_surface[26,3] = spearman_surface_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df_surface[26,4] = spearman_surface_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_surface_DCellobiose = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df_surface[27,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[27,2] = "DCellobiose"
+Rho_p.value_fixed_df_surface[27,3] = spearman_surface_DCellobiose$estimate 
+Rho_p.value_fixed_df_surface[27,4] = spearman_surface_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_surface_Glucos_1Phosphate = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df_surface[28,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[28,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df_surface[28,3] = spearman_surface_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df_surface[28,4] = spearman_surface_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_surface_alpha_Ketobutyric_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df_surface[29,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[29,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df_surface[29,3] = spearman_surface_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df_surface[29,4] = spearman_surface_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_surface_Phenylethyl_amine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df_surface[30,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[30,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df_surface[30,3] = spearman_surface_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df_surface[30,4] = spearman_surface_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_surface_alpha_DLactose = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df_surface[31,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[31,2] = "alpha_DLactose"
+Rho_p.value_fixed_df_surface[31,3] = spearman_surface_alpha_DLactose$estimate 
+Rho_p.value_fixed_df_surface[31,4] = spearman_surface_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_surface_DL_alpha_Glycerol_Phosphate = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df_surface[32,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[32,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df_surface[32,3] = spearman_surface_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df_surface[32,4] = spearman_surface_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_surface_DMalic_Acid = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df_surface[33,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[33,2] = "DMalic_Acid"
+Rho_p.value_fixed_df_surface[33,3] = spearman_surface_DMalic_Acid$estimate 
+Rho_p.value_fixed_df_surface[33,4] = spearman_surface_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_surface_Putrescine = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df_surface[34,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[34,2] = "Putrescine"
+Rho_p.value_fixed_df_surface[34,3] = spearman_surface_Putrescine$estimate 
+Rho_p.value_fixed_df_surface[34,4] = spearman_surface_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_surface_Bacterial_abundance = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df_surface[35,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[35,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df_surface[35,3] = spearman_surface_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df_surface[35,4] = spearman_surface_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_surface_Bacterial_activity = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df_surface[36,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[36,2] = "Bacterial_activity"
+Rho_p.value_fixed_df_surface[36,3] = spearman_surface_Bacterial_activity$estimate 
+Rho_p.value_fixed_df_surface[36,4] = spearman_surface_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_surface_Sample_Depth = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df_surface[37,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[37,2] = "Sample_Depth"
+Rho_p.value_fixed_df_surface[37,3] = spearman_surface_Sample_Depth$estimate 
+Rho_p.value_fixed_df_surface[37,4] = spearman_surface_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_surface_Sample_Site = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df_surface[38,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[38,2] = "Sample_Site"
+Rho_p.value_fixed_df_surface[38,3] = spearman_surface_Sample_Site$estimate 
+Rho_p.value_fixed_df_surface[38,4] = spearman_surface_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_surface_Salinity = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df_surface[39,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[39,2] = "Salinity"
+Rho_p.value_fixed_df_surface[39,3] = spearman_surface_Salinity$estimate 
+Rho_p.value_fixed_df_surface[39,4] = spearman_surface_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_surface_OxygenPerSat = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df_surface[40,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[40,2] = "OxygenPerSat"
+Rho_p.value_fixed_df_surface[40,3] = spearman_surface_OxygenPerSat$estimate 
+Rho_p.value_fixed_df_surface[40,4] = spearman_surface_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_surface_Temperature = cor.test(alpha_meta_all_surface$MDS1, alpha_meta_all_surface$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df_surface[41,1] = "NMDS1"
+Rho_p.value_fixed_df_surface[41,2] = "Temperature"
+Rho_p.value_fixed_df_surface[41,3] = spearman_surface_Temperature$estimate 
+Rho_p.value_fixed_df_surface[41,4] = spearman_surface_Temperature$p.value 
+
+```
+```{r NMDS 2}
+#Carry out spearman - Observed
+spearman_surface_Observed = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df_surface[42,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[42,2] = "Observed"
+Rho_p.value_fixed_df_surface[42,3] = spearman_surface_Observed$estimate 
+Rho_p.value_fixed_df_surface[42,4] = spearman_surface_Observed$p.value  
+#Mantel - Observed
+Observed.dist_surface = dist(alpha_meta_all_surface$Observed)
+Observed_mantel = mantel(NMDS2_mantel.dist,Observed.dist_surface, permutations = 999 )
+Observed_mantel #Would want to use the 95% one.
+
+#Carry out spearman - Shannon
+spearman_surface_Shannon = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df_surface[43,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[43,2] = "Shannon"
+Rho_p.value_fixed_df_surface[43,3] = spearman_surface_Shannon$estimate 
+Rho_p.value_fixed_df_surface[43,4] = spearman_surface_Shannon$p.value  
+#Mantel - Shannon
+Shannon.dist_surface = dist(alpha_meta_all_surface$Shannon)
+Shannon_mantel = mantel(NMDS2_mantel.dist,Shannon.dist_surface, permutations = 999 )
+Shannon_mantel
+
+#Carry out spearman - Pielou
+spearman_surface_Pielou = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df_surface[44,1] 8= "NMDS2"
+Rho_p.value_fixed_df_surface[44,2] = "Pielou"
+Rho_p.value_fixed_df_surface[44,3] = spearman_surface_Pielou$estimate
+Rho_p.value_fixed_df_surface[44,4] = spearman_surface_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist_surface = dist(alpha_meta_all_surface$Pielou)
+Pielou_mantel = mantel(NMDS2_mantel.dist,Pielou.dist_surface, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_surface_beta_Methyl_D_Glucoside = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df_surface[45,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[45,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df_surface[45,3] = spearman_surface_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df_surface[45,4] = spearman_surface_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist_surface = dist(alpha_meta_all_surface$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(NMDS2_mantel.dist,beta_Methyl_D_Glucoside.dist_surface, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_surface_DGalactonic_Acid_gamma_Lactone = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df_surface[46,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[46,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df_surface[46,3] = spearman_surface_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df_surface[46,4] = spearman_surface_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_surface_LArginine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df_surface[47,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[47,2] = "LArginine"
+Rho_p.value_fixed_df_surface[47,3] = spearman_surface_LArginine$estimate 
+Rho_p.value_fixed_df_surface[47,4] = spearman_surface_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_surface_Pyruvic_Acid_Methyl_Ester = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df_surface[48,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[48,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df_surface[48,3] = spearman_surface_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df_surface[48,4] = spearman_surface_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_surface_DXylose = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df_surface[49,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[49,2] = "DXylose"
+Rho_p.value_fixed_df_surface[49,3] = spearman_surface_DXylose$estimate  
+Rho_p.value_fixed_df_surface[49,4] = spearman_surface_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_surface_DGalacturonic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df_surface[50,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[50,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df_surface[50,3] = spearman_surface_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df_surface[50,4] = spearman_surface_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_surface_LAsparagine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df_surface[51,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[51,2] = "LAsparagine"
+Rho_p.value_fixed_df_surface[51,3] = spearman_surface_LAsparagine$estimate
+Rho_p.value_fixed_df_surface[51,4] = spearman_surface_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_surface_Tween_40 = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df_surface[52,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[52,2] = "Tween_40"
+Rho_p.value_fixed_df_surface[52,3] = spearman_surface_Tween_40$estimate 
+Rho_p.value_fixed_df_surface[52,4] = spearman_surface_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_surface_i_Erythritol = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df_surface[53,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[53,2] = "i_Erythritol"
+Rho_p.value_fixed_df_surface[53,3] = spearman_surface_i_Erythritol$estimate  
+Rho_p.value_fixed_df_surface[53,4] = spearman_surface_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_surface_X2_Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_surface[54,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[54,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_surface[54,3] = spearman_surface_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df_surface[54,4] = spearman_surface_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_surface_L_Phenylalanine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df_surface[55,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[55,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df_surface[55,3] = spearman_surface_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df_surface[55,4] = spearman_surface_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_surface_Tween_80 = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df_surface[56,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[56,2] = "Tween_80"
+Rho_p.value_fixed_df_surface[56,3] = spearman_surface_Tween_80$estimate 
+Rho_p.value_fixed_df_surface[56,4] = spearman_surface_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_surface_DMannitol = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df_surface[57,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[57,2] = "DMannitol"
+Rho_p.value_fixed_df_surface[57,3] = spearman_surface_DMannitol$estimate 
+Rho_p.value_fixed_df_surface[57,4] = spearman_surface_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_surface_X4Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_surface[58,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[58,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_surface[58,3] = spearman_surface_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df_surface[58,4] = spearman_surface_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_surface_LSerine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df_surface[59,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[59,2] = "LSerine"
+Rho_p.value_fixed_df_surface[59,3] = spearman_surface_LSerine$estimate 
+Rho_p.value_fixed_df_surface[59,4] = spearman_surface_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_surface_alpha_Cyclodextrin = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df_surface[60,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[60,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df_surface[60,3] = spearman_surface_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df_surface[60,4] = spearman_surface_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_surface_Nacetyl_DGlucosamine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df_surface[61,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[61,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df_surface[61,3] = spearman_surface_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df_surface[61,4] = spearman_surface_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_surface_gamma_Hydroxybutyric_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df_surface[62,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[62,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df_surface[62,3] = spearman_surface_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df_surface[62,4] = spearman_surface_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_surface_L_Threonine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df_surface[63,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[63,2] = "L_Threonine"
+Rho_p.value_fixed_df_surface[63,3] = spearman_surface_L_Threonine$estimate 
+Rho_p.value_fixed_df_surface[63,4] = spearman_surface_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_surface_Glycogen = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df_surface[64,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[64,2] = "Glycogen"
+Rho_p.value_fixed_df_surface[64,3] = spearman_surface_Glycogen$estimate 
+Rho_p.value_fixed_df_surface[64,4] = spearman_surface_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_surface_DGlucosaminic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df_surface[65,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[65,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df_surface[65,3] = spearman_surface_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df_surface[65,4] = spearman_surface_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_surface_Itaconic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df_surface[66,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[66,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df_surface[66,3] = spearman_surface_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df_surface[66,4] = spearman_surface_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_surface_Glycyl_LGlutamic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df_surface[67,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[67,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df_surface[67,3] = spearman_surface_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df_surface[67,4] = spearman_surface_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_surface_DCellobiose = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df_surface[68,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[68,2] = "DCellobiose"
+Rho_p.value_fixed_df_surface[68,3] = spearman_surface_DCellobiose$estimate 
+Rho_p.value_fixed_df_surface[68,4] = spearman_surface_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_surface_Glucos_1Phosphate = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df_surface[69,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[69,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df_surface[69,3] = spearman_surface_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df_surface[69,4] = spearman_surface_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_surface_alpha_Ketobutyric_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df_surface[70,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[70,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df_surface[70,3] = spearman_surface_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df_surface[70,4] = spearman_surface_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_surface_Phenylethyl_amine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df_surface[71,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[71,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df_surface[71,3] = spearman_surface_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df_surface[71,4] = spearman_surface_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_surface_alpha_DLactose = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df_surface[72,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[72,2] = "alpha_DLactose"
+Rho_p.value_fixed_df_surface[72,3] = spearman_surface_alpha_DLactose$estimate 
+Rho_p.value_fixed_df_surface[72,4] = spearman_surface_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_surface_DL_alpha_Glycerol_Phosphate = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df_surface[73,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[73,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df_surface[73,3] = spearman_surface_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df_surface[73,4] = spearman_surface_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_surface_DMalic_Acid = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df_surface[74,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[74,2] = "DMalic_Acid"
+Rho_p.value_fixed_df_surface[74,3] = spearman_surface_DMalic_Acid$estimate 
+Rho_p.value_fixed_df_surface[74,4] = spearman_surface_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_surface_Putrescine = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df_surface[75,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[75,2] = "Putrescine"
+Rho_p.value_fixed_df_surface[75,3] = spearman_surface_Putrescine$estimate 
+Rho_p.value_fixed_df_surface[75,4] = spearman_surface_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_surface_Bacterial_abundance = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df_surface[76,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[76,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df_surface[76,3] = spearman_surface_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df_surface[76,4] = spearman_surface_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_surface_Bacterial_activity = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df_surface[77,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[77,2] = "Bacterial_activity"
+Rho_p.value_fixed_df_surface[77,3] = spearman_surface_Bacterial_activity$estimate 
+Rho_p.value_fixed_df_surface[77,4] = spearman_surface_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_surface_Sample_Depth = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df_surface[78,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[78,2] = "Sample_Depth"
+Rho_p.value_fixed_df_surface[78,3] = spearman_surface_Sample_Depth$estimate 
+Rho_p.value_fixed_df_surface[78,4] = spearman_surface_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_surface_Sample_Site = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df_surface[79,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[79,2] = "Sample_Site"
+Rho_p.value_fixed_df_surface[79,3] = spearman_surface_Sample_Site$estimate 
+Rho_p.value_fixed_df_surface[79,4] = spearman_surface_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_surface_Salinity = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df_surface[80,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[80,2] = "Salinity"
+Rho_p.value_fixed_df_surface[80,3] = spearman_surface_Salinity$estimate 
+Rho_p.value_fixed_df_surface[80,4] = spearman_surface_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_surface_OxygenPerSat = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df_surface[81,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[81,2] = "OxygenPerSat"
+Rho_p.value_fixed_df_surface[81,3] = spearman_surface_OxygenPerSat$estimate 
+Rho_p.value_fixed_df_surface[81,4] = spearman_surface_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_surface_Temperature = cor.test(alpha_meta_all_surface$MDS2, alpha_meta_all_surface$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df_surface[82,1] = "NMDS2"
+Rho_p.value_fixed_df_surface[82,2] = "Temperature"
+Rho_p.value_fixed_df_surface[82,3] = spearman_surface_Temperature$estimate 
+Rho_p.value_fixed_df_surface[82,4] = spearman_surface_Temperature$p.value 
+
+```
+```{r adjusted p value}
+#Carry out bonferroni correction
+adjusted_p.value_surface = p.adjust(Rho_p.value_fixed_df_surface$p.value, method = "bonferroni")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_surface = as.data.frame(adjusted_p.value_surface)
+
+#Make back up in case of fuck up
+NMDS1_spearman_noadjustedpvalue_surface = NMDS1_spearman_surface
+
+#Bind adjusted p-value onto data frame
+Spearman_surface = cbind(Rho_p.value_fixed_df_surface, adjusted_p.value_surface$adjusted_p.value_surface)
+
+#Rename adjusted p value column
+colnames(Spearman_surface)[which(names(Spearman_surface) == "adjusted_p.value_surface$adjusted_p.value_surface")] <- "adjusted_p_value"
+
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_surface, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/Spearman_surface_withsignificance_adjusted.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_surface = subset(Spearman_surface, p.value < 5e-2)
+
+#Extract the significant values
+write.csv(onlysignificance_surface, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/Spearman_student_onlysignificant_surface.csv")
+
+```
+##10m
+```{r Add NMDS1 coordinates to mapping file (alpha_meta_inout)}
+#Extract coordinates by axis
+SiteNMDScoordinates_10m = NMDS.ord_10m$points
+
+#Make Fiord phyloseq 10m into alpha_meta df
+#Dataframe for dissimialrity testing
+alpha_summary_10m <- estimate_richness(Fiord_phyloseq_Hor_10m, measures = c("Observed", "Shannon"))
+Evenness_10m <- evenness(Fiord_phyloseq_Hor_10m, 'pielou')
+alpha_summary_10m$Pielou <- Evenness_10m$pielou
+#combine with metadata
+alpha_meta_10m <- data.frame(alpha_summary_10m, sample_data(Fiord_phyloseq_Hor_10m))
+alpha_meta_10m
+
+#Remove unit columns.
+alpha_meta_10m = alpha_meta_10m[,-c(4:9, 11, 44, 46, 48, 50:100)]
+
+#Bind NMDS columns to dataframe
+forspearman0 = cbind(alpha_meta_10m, SiteNMDScoordinates_10m)
+
+#Export and add CTD data
+write.csv(forspearman0, "Alpha_meta_all_10m.csv")
+
+#Import alpha meta with CTD
+Alpha_meta_all_10m = read.csv("Alpha_meta_all_10m.csv", row.names = 1)
+
+#Remove non-numeric columns
+alpha_meta_all_10m = subset(Alpha_meta_all_10m, select = -c(New_Name))
+
+#Convert the last obstinate factors (depth) to a numeric.
+alpha_meta_all_10m$Sample_Depth <- as.numeric(as.character(alpha_meta_all_10m$Sample_Depth))
+alpha_meta_all_10m$Observed <- as.numeric(as.character(alpha_meta_all_10m$Observed))
+alpha_meta_all_10m$Bacterial_abundance <- as.numeric(as.character(alpha_meta_all_10m$Bacterial_abundance))
+alpha_meta_all_10m$Sample_Site <- as.numeric(as.character(alpha_meta_all_10m$Sample_Site))
+
+```
+```{r Spearman and p-value at the 10m}
+#Make a df to add rho and p-value to.
+library(tibble)
+Rho_p.value_fixed_df_10m = data.frame("Variable 1" = NA, "Variable 2" = 0, "rho value" = 0, "p.value" = 0)
+#row.names(Rho_p.value_fixed_df_10m_NMDS1) = colnames(alpha_meta_all_10m)
+  
+  #tibble::column_to_rownames(alpha_meta_all_10m)
+
+#Mantel for MDS1
+MDS1_mantel.dist = dist(alpha_meta_all_10m$MDS1)
+#Mantel for MDS2
+MDS2_mantel.dist = dist(alpha_meta_all_10m$MDS2)
+
+#Carry out spearman - Observed
+spearman_10m_Observed = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df_10m[1,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[1,2] = "Observed"
+Rho_p.value_fixed_df_10m[1,3] = spearman_10m_Observed$estimate 
+Rho_p.value_fixed_df_10m[1,4] = spearman_10m_Observed$p.value  
+#Mantel - Observed
+Observed.dist_10m = dist(alpha_meta_all_10m$Observed)
+Observed_mantel = mantel(MDS1_mantel.dist,Observed.dist_10m, permutations = 999 )
+Observed_mantel #Would want to use the 95% one.
+
+#Carry out spearman - Shannon
+spearman_10m_Shannon = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df_10m[2,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[2,2] = "Shannon"
+Rho_p.value_fixed_df_10m[2,3] = spearman_10m_Shannon$estimate 
+Rho_p.value_fixed_df_10m[2,4] = spearman_10m_Shannon$p.value  
+#Mantel - Shannon
+Shannon.dist_10m = dist(alpha_meta_all_10m$Shannon)
+Shannon_mantel = mantel(MDS1_mantel.dist,Shannon.dist_10m, permutations = 999 )
+Shannon_mantel
+
+#Carry out spearman - Pielou
+spearman_10m_Pielou = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df_10m[3,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[3,2] = "Pielou"
+Rho_p.value_fixed_df_10m[3,3] = spearman_10m_Pielou$estimate
+Rho_p.value_fixed_df_10m[3,4] = spearman_10m_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist_10m = dist(alpha_meta_all_10m$Pielou)
+Pielou_mantel = mantel(MDS1_mantel.dist,Pielou.dist_10m, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_10m_beta_Methyl_D_Glucoside = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df_10m[4,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[4,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df_10m[4,3] = spearman_10m_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df_10m[4,4] = spearman_10m_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist_10m = dist(alpha_meta_all_10m$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(MDS1_mantel.dist,beta_Methyl_D_Glucoside.dist_10m, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_10m_DGalactonic_Acid_gamma_Lactone = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df_10m[5,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[5,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df_10m[5,3] = spearman_10m_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df_10m[5,4] = spearman_10m_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_10m_LArginine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df_10m[6,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[6,2] = "LArginine"
+Rho_p.value_fixed_df_10m[6,3] = spearman_10m_LArginine$estimate 
+Rho_p.value_fixed_df_10m[6,4] = spearman_10m_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_10m_Pyruvic_Acid_Methyl_Ester = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df_10m[7,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[7,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df_10m[7,3] = spearman_10m_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df_10m[7,4] = spearman_10m_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_10m_DXylose = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df_10m[8,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[8,2] = "DXylose"
+Rho_p.value_fixed_df_10m[8,3] = spearman_10m_DXylose$estimate  
+Rho_p.value_fixed_df_10m[8,4] = spearman_10m_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_10m_DGalacturonic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df_10m[9,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[9,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df_10m[9,3] = spearman_10m_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df_10m[9,4] = spearman_10m_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_10m_LAsparagine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df_10m[10,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[10,2] = "LAsparagine"
+Rho_p.value_fixed_df_10m[10,3] = spearman_10m_LAsparagine$estimate
+Rho_p.value_fixed_df_10m[10,4] = spearman_10m_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_10m_Tween_40 = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df_10m[11,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[11,2] = "Tween_40"
+Rho_p.value_fixed_df_10m[11,3] = spearman_10m_Tween_40$estimate 
+Rho_p.value_fixed_df_10m[11,4] = spearman_10m_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_10m_i_Erythritol = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df_10m[12,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[12,2] = "i_Erythritol"
+Rho_p.value_fixed_df_10m[12,3] = spearman_10m_i_Erythritol$estimate  
+Rho_p.value_fixed_df_10m[12,4] = spearman_10m_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_10m_X2_Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_10m[13,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[13,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_10m[13,3] = spearman_10m_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df_10m[13,4] = spearman_10m_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_10m_L_Phenylalanine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df_10m[14,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[14,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df_10m[14,3] = spearman_10m_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df_10m[14,4] = spearman_10m_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_10m_Tween_80 = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df_10m[15,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[15,2] = "Tween_80"
+Rho_p.value_fixed_df_10m[15,3] = spearman_10m_Tween_80$estimate 
+Rho_p.value_fixed_df_10m[15,4] = spearman_10m_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_10m_DMannitol = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df_10m[16,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[16,2] = "DMannitol"
+Rho_p.value_fixed_df_10m[16,3] = spearman_10m_DMannitol$estimate 
+Rho_p.value_fixed_df_10m[16,4] = spearman_10m_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_10m_X4Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_10m[17,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[17,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_10m[17,3] = spearman_10m_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df_10m[17,4] = spearman_10m_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_10m_LSerine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df_10m[18,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[18,2] = "LSerine"
+Rho_p.value_fixed_df_10m[18,3] = spearman_10m_LSerine$estimate 
+Rho_p.value_fixed_df_10m[18,4] = spearman_10m_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_10m_alpha_Cyclodextrin = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df_10m[19,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[19,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df_10m[19,3] = spearman_10m_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df_10m[19,4] = spearman_10m_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_10m_Nacetyl_DGlucosamine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df_10m[20,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[20,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df_10m[20,3] = spearman_10m_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df_10m[20,4] = spearman_10m_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_10m_gamma_Hydroxybutyric_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df_10m[21,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[21,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df_10m[21,3] = spearman_10m_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df_10m[21,4] = spearman_10m_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_10m_L_Threonine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df_10m[22,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[22,2] = "L_Threonine"
+Rho_p.value_fixed_df_10m[22,3] = spearman_10m_L_Threonine$estimate 
+Rho_p.value_fixed_df_10m[22,4] = spearman_10m_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_10m_Glycogen = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df_10m[23,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[23,2] = "Glycogen"
+Rho_p.value_fixed_df_10m[23,3] = spearman_10m_Glycogen$estimate 
+Rho_p.value_fixed_df_10m[23,4] = spearman_10m_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_10m_DGlucosaminic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df_10m[24,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[24,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df_10m[24,3] = spearman_10m_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df_10m[24,4] = spearman_10m_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_10m_Itaconic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df_10m[25,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[25,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df_10m[25,3] = spearman_10m_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df_10m[25,4] = spearman_10m_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_10m_Glycyl_LGlutamic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df_10m[26,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[26,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df_10m[26,3] = spearman_10m_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df_10m[26,4] = spearman_10m_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_10m_DCellobiose = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df_10m[27,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[27,2] = "DCellobiose"
+Rho_p.value_fixed_df_10m[27,3] = spearman_10m_DCellobiose$estimate 
+Rho_p.value_fixed_df_10m[27,4] = spearman_10m_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_10m_Glucos_1Phosphate = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df_10m[28,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[28,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df_10m[28,3] = spearman_10m_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df_10m[28,4] = spearman_10m_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_10m_alpha_Ketobutyric_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df_10m[29,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[29,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df_10m[29,3] = spearman_10m_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df_10m[29,4] = spearman_10m_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_10m_Phenylethyl_amine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df_10m[30,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[30,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df_10m[30,3] = spearman_10m_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df_10m[30,4] = spearman_10m_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_10m_alpha_DLactose = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df_10m[31,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[31,2] = "alpha_DLactose"
+Rho_p.value_fixed_df_10m[31,3] = spearman_10m_alpha_DLactose$estimate 
+Rho_p.value_fixed_df_10m[31,4] = spearman_10m_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_10m_DL_alpha_Glycerol_Phosphate = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df_10m[32,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[32,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df_10m[32,3] = spearman_10m_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df_10m[32,4] = spearman_10m_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_10m_DMalic_Acid = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df_10m[33,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[33,2] = "DMalic_Acid"
+Rho_p.value_fixed_df_10m[33,3] = spearman_10m_DMalic_Acid$estimate 
+Rho_p.value_fixed_df_10m[33,4] = spearman_10m_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_10m_Putrescine = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df_10m[34,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[34,2] = "Putrescine"
+Rho_p.value_fixed_df_10m[34,3] = spearman_10m_Putrescine$estimate 
+Rho_p.value_fixed_df_10m[34,4] = spearman_10m_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_10m_Bacterial_abundance = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df_10m[35,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[35,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df_10m[35,3] = spearman_10m_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df_10m[35,4] = spearman_10m_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_10m_Bacterial_activity = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df_10m[36,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[36,2] = "Bacterial_activity"
+Rho_p.value_fixed_df_10m[36,3] = spearman_10m_Bacterial_activity$estimate 
+Rho_p.value_fixed_df_10m[36,4] = spearman_10m_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_10m_Sample_Depth = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df_10m[37,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[37,2] = "Sample_Depth"
+Rho_p.value_fixed_df_10m[37,3] = spearman_10m_Sample_Depth$estimate 
+Rho_p.value_fixed_df_10m[37,4] = spearman_10m_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_10m_Sample_Site = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df_10m[38,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[38,2] = "Sample_Site"
+Rho_p.value_fixed_df_10m[38,3] = spearman_10m_Sample_Site$estimate 
+Rho_p.value_fixed_df_10m[38,4] = spearman_10m_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_10m_Salinity = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df_10m[39,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[39,2] = "Salinity"
+Rho_p.value_fixed_df_10m[39,3] = spearman_10m_Salinity$estimate 
+Rho_p.value_fixed_df_10m[39,4] = spearman_10m_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_10m_OxygenPerSat = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df_10m[40,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[40,2] = "OxygenPerSat"
+Rho_p.value_fixed_df_10m[40,3] = spearman_10m_OxygenPerSat$estimate 
+Rho_p.value_fixed_df_10m[40,4] = spearman_10m_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_10m_Temperature = cor.test(alpha_meta_all_10m$MDS1, alpha_meta_all_10m$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df_10m[41,1] = "NMDS1"
+Rho_p.value_fixed_df_10m[41,2] = "Temperature"
+Rho_p.value_fixed_df_10m[41,3] = spearman_10m_Temperature$estimate 
+Rho_p.value_fixed_df_10m[41,4] = spearman_10m_Temperature$p.value 
+
+```
+```{r NMDS 2}
+#Carry out spearman - Observed
+spearman_10m_Observed = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df_10m[42,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[42,2] = "Observed"
+Rho_p.value_fixed_df_10m[42,3] = spearman_10m_Observed$estimate 
+Rho_p.value_fixed_df_10m[42,4] = spearman_10m_Observed$p.value  
+#Mantel - Observed
+Observed.dist_10m = dist(alpha_meta_all_10m$Observed)
+Observed_mantel = mantel(NMDS2_mantel.dist,Observed.dist_10m, permutations = 999 )
+Observed_mantel #Would want to use the 95% one.
+
+#Carry out spearman - Shannon
+spearman_10m_Shannon = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df_10m[43,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[43,2] = "Shannon"
+Rho_p.value_fixed_df_10m[43,3] = spearman_10m_Shannon$estimate 
+Rho_p.value_fixed_df_10m[43,4] = spearman_10m_Shannon$p.value  
+#Mantel - Shannon
+Shannon.dist_10m = dist(alpha_meta_all_10m$Shannon)
+Shannon_mantel = mantel(NMDS2_mantel.dist,Shannon.dist_10m, permutations = 999 )
+Shannon_mantel
+
+#Carry out spearman - Pielou
+spearman_10m_Pielou = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df_10m[44,1] 8= "NMDS2"
+Rho_p.value_fixed_df_10m[44,2] = "Pielou"
+Rho_p.value_fixed_df_10m[44,3] = spearman_10m_Pielou$estimate
+Rho_p.value_fixed_df_10m[44,4] = spearman_10m_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist_10m = dist(alpha_meta_all_10m$Pielou)
+Pielou_mantel = mantel(NMDS2_mantel.dist,Pielou.dist_10m, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_10m_beta_Methyl_D_Glucoside = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df_10m[45,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[45,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df_10m[45,3] = spearman_10m_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df_10m[45,4] = spearman_10m_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist_10m = dist(alpha_meta_all_10m$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(NMDS2_mantel.dist,beta_Methyl_D_Glucoside.dist_10m, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_10m_DGalactonic_Acid_gamma_Lactone = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df_10m[46,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[46,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df_10m[46,3] = spearman_10m_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df_10m[46,4] = spearman_10m_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_10m_LArginine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df_10m[47,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[47,2] = "LArginine"
+Rho_p.value_fixed_df_10m[47,3] = spearman_10m_LArginine$estimate 
+Rho_p.value_fixed_df_10m[47,4] = spearman_10m_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_10m_Pyruvic_Acid_Methyl_Ester = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df_10m[48,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[48,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df_10m[48,3] = spearman_10m_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df_10m[48,4] = spearman_10m_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_10m_DXylose = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df_10m[49,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[49,2] = "DXylose"
+Rho_p.value_fixed_df_10m[49,3] = spearman_10m_DXylose$estimate  
+Rho_p.value_fixed_df_10m[49,4] = spearman_10m_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_10m_DGalacturonic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df_10m[50,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[50,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df_10m[50,3] = spearman_10m_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df_10m[50,4] = spearman_10m_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_10m_LAsparagine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df_10m[51,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[51,2] = "LAsparagine"
+Rho_p.value_fixed_df_10m[51,3] = spearman_10m_LAsparagine$estimate
+Rho_p.value_fixed_df_10m[51,4] = spearman_10m_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_10m_Tween_40 = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df_10m[52,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[52,2] = "Tween_40"
+Rho_p.value_fixed_df_10m[52,3] = spearman_10m_Tween_40$estimate 
+Rho_p.value_fixed_df_10m[52,4] = spearman_10m_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_10m_i_Erythritol = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df_10m[53,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[53,2] = "i_Erythritol"
+Rho_p.value_fixed_df_10m[53,3] = spearman_10m_i_Erythritol$estimate  
+Rho_p.value_fixed_df_10m[53,4] = spearman_10m_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_10m_X2_Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_10m[54,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[54,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_10m[54,3] = spearman_10m_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df_10m[54,4] = spearman_10m_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_10m_L_Phenylalanine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df_10m[55,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[55,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df_10m[55,3] = spearman_10m_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df_10m[55,4] = spearman_10m_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_10m_Tween_80 = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df_10m[56,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[56,2] = "Tween_80"
+Rho_p.value_fixed_df_10m[56,3] = spearman_10m_Tween_80$estimate 
+Rho_p.value_fixed_df_10m[56,4] = spearman_10m_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_10m_DMannitol = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df_10m[57,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[57,2] = "DMannitol"
+Rho_p.value_fixed_df_10m[57,3] = spearman_10m_DMannitol$estimate 
+Rho_p.value_fixed_df_10m[57,4] = spearman_10m_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_10m_X4Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df_10m[58,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[58,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df_10m[58,3] = spearman_10m_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df_10m[58,4] = spearman_10m_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_10m_LSerine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df_10m[59,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[59,2] = "LSerine"
+Rho_p.value_fixed_df_10m[59,3] = spearman_10m_LSerine$estimate 
+Rho_p.value_fixed_df_10m[59,4] = spearman_10m_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_10m_alpha_Cyclodextrin = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df_10m[60,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[60,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df_10m[60,3] = spearman_10m_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df_10m[60,4] = spearman_10m_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_10m_Nacetyl_DGlucosamine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df_10m[61,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[61,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df_10m[61,3] = spearman_10m_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df_10m[61,4] = spearman_10m_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_10m_gamma_Hydroxybutyric_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df_10m[62,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[62,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df_10m[62,3] = spearman_10m_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df_10m[62,4] = spearman_10m_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_10m_L_Threonine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df_10m[63,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[63,2] = "L_Threonine"
+Rho_p.value_fixed_df_10m[63,3] = spearman_10m_L_Threonine$estimate 
+Rho_p.value_fixed_df_10m[63,4] = spearman_10m_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_10m_Glycogen = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df_10m[64,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[64,2] = "Glycogen"
+Rho_p.value_fixed_df_10m[64,3] = spearman_10m_Glycogen$estimate 
+Rho_p.value_fixed_df_10m[64,4] = spearman_10m_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_10m_DGlucosaminic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df_10m[65,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[65,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df_10m[65,3] = spearman_10m_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df_10m[65,4] = spearman_10m_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_10m_Itaconic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df_10m[66,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[66,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df_10m[66,3] = spearman_10m_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df_10m[66,4] = spearman_10m_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_10m_Glycyl_LGlutamic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df_10m[67,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[67,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df_10m[67,3] = spearman_10m_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df_10m[67,4] = spearman_10m_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_10m_DCellobiose = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df_10m[68,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[68,2] = "DCellobiose"
+Rho_p.value_fixed_df_10m[68,3] = spearman_10m_DCellobiose$estimate 
+Rho_p.value_fixed_df_10m[68,4] = spearman_10m_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_10m_Glucos_1Phosphate = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df_10m[69,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[69,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df_10m[69,3] = spearman_10m_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df_10m[69,4] = spearman_10m_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_10m_alpha_Ketobutyric_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df_10m[70,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[70,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df_10m[70,3] = spearman_10m_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df_10m[70,4] = spearman_10m_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_10m_Phenylethyl_amine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df_10m[71,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[71,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df_10m[71,3] = spearman_10m_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df_10m[71,4] = spearman_10m_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_10m_alpha_DLactose = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df_10m[72,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[72,2] = "alpha_DLactose"
+Rho_p.value_fixed_df_10m[72,3] = spearman_10m_alpha_DLactose$estimate 
+Rho_p.value_fixed_df_10m[72,4] = spearman_10m_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_10m_DL_alpha_Glycerol_Phosphate = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df_10m[73,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[73,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df_10m[73,3] = spearman_10m_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df_10m[73,4] = spearman_10m_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_10m_DMalic_Acid = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df_10m[74,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[74,2] = "DMalic_Acid"
+Rho_p.value_fixed_df_10m[74,3] = spearman_10m_DMalic_Acid$estimate 
+Rho_p.value_fixed_df_10m[74,4] = spearman_10m_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_10m_Putrescine = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df_10m[75,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[75,2] = "Putrescine"
+Rho_p.value_fixed_df_10m[75,3] = spearman_10m_Putrescine$estimate 
+Rho_p.value_fixed_df_10m[75,4] = spearman_10m_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_10m_Bacterial_abundance = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df_10m[76,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[76,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df_10m[76,3] = spearman_10m_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df_10m[76,4] = spearman_10m_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_10m_Bacterial_activity = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df_10m[77,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[77,2] = "Bacterial_activity"
+Rho_p.value_fixed_df_10m[77,3] = spearman_10m_Bacterial_activity$estimate 
+Rho_p.value_fixed_df_10m[77,4] = spearman_10m_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_10m_Sample_Depth = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df_10m[78,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[78,2] = "Sample_Depth"
+Rho_p.value_fixed_df_10m[78,3] = spearman_10m_Sample_Depth$estimate 
+Rho_p.value_fixed_df_10m[78,4] = spearman_10m_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_10m_Sample_Site = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df_10m[79,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[79,2] = "Sample_Site"
+Rho_p.value_fixed_df_10m[79,3] = spearman_10m_Sample_Site$estimate 
+Rho_p.value_fixed_df_10m[79,4] = spearman_10m_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_10m_Salinity = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df_10m[80,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[80,2] = "Salinity"
+Rho_p.value_fixed_df_10m[80,3] = spearman_10m_Salinity$estimate 
+Rho_p.value_fixed_df_10m[80,4] = spearman_10m_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_10m_OxygenPerSat = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df_10m[81,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[81,2] = "OxygenPerSat"
+Rho_p.value_fixed_df_10m[81,3] = spearman_10m_OxygenPerSat$estimate 
+Rho_p.value_fixed_df_10m[81,4] = spearman_10m_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_10m_Temperature = cor.test(alpha_meta_all_10m$MDS2, alpha_meta_all_10m$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df_10m[82,1] = "NMDS2"
+Rho_p.value_fixed_df_10m[82,2] = "Temperature"
+Rho_p.value_fixed_df_10m[82,3] = spearman_10m_Temperature$estimate 
+Rho_p.value_fixed_df_10m[82,4] = spearman_10m_Temperature$p.value 
+
+```
+```{r adjusted p value}
+#Carry out bonferroni correction
+adjusted_p.value_10m = p.adjust(Rho_p.value_fixed_df_10m$p.value, method = "bonferroni")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value_10m = as.data.frame(adjusted_p.value_10m)
+
+#Bind adjusted p-value onto data frame
+Spearman_10m = cbind(Rho_p.value_fixed_df_10m, adjusted_p.value_10m$adjusted_p.value_10m)
+
+#Rename adjusted p value column
+colnames(Spearman_10m)[which(names(Spearman_10m) == "adjusted_p.value_10m$adjusted_p.value_10m")] <- "adjusted_p_value"
+
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman_10m, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/Spearman_10m_withsignificance_adjusted.csv")
+
+#Subset to only the statistically significant values
+onlysignificance_10m = subset(Spearman_10m, p.value < 5e-2)
+
+#Extract the significant values
+write.csv(onlysignificance_10m, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/Spearman_onlysignificant_10m.csv")
+
+```
+
+#Within Long Sound - vertical profile
+```{r Set up for spearman}
+#Extarct coordinates by axis
+NMDS_coordinates = NMDS.ord_Vert$points
+library(phyloseq)
+library(microbiome)
+#Make Fiord phyloseq surface into alpha_meta df
+#Dataframe for dissimialrity testing
+alpha_summary <- estimate_richness(Fiord_phyloseq_Vert, measures = c("Observed", "Shannon"))
+Evenness <- evenness(Fiord_phyloseq_Vert, 'pielou')
+alpha_summary$Pielou <- Evenness$pielou
+#combine with metadata
+alpha_meta <- data.frame(alpha_summary, sample_data(Fiord_phyloseq_Vert))
+alpha_meta
+
+#Remove unit columns
+alpha_meta = alpha_meta[,-c(4:9, 11, 44, 46, 48, 50:100)]
+
+#Bind NMDS columns to dataframe
+forspearman0 = cbind(alpha_meta, NMDS_coordinates)
+
+#Export and add CTD data
+write.csv(forspearman0, "Alpha_meta_all.csv")
+write.csv(Vert_CTD, "Vertical_CTD.csv")
+
+#Import alpha meta with CTD
+Alpha_meta_all = read.csv("Alpha_meta_all.csv", row.names = 1)
+
+#Remove non-numeric columns
+alpha_meta_all = subset(Alpha_meta_all, select = -c(New_Name))
+
+#Convert the last obstinate factors (depth) to a numeric.
+alpha_meta_all$Sample_Depth <- as.numeric(as.character(alpha_meta_all$Sample_Depth))
+alpha_meta_all$Observed <- as.numeric(as.character(alpha_meta_all$Observed))
+alpha_meta_all$Bacterial_abundance <- as.numeric(as.character(alpha_meta_all$Bacterial_abundance))
+alpha_meta_all$Sample_Site <- as.numeric(as.character(alpha_meta_all$Sample_Site))
+
+```
+
+```{r Spearman and p-value}
+#Make a df to add rho and p-value to.
+library(tibble)
+Rho_p.value_fixed_df = data.frame("Variable 1" = NA, "Variable 2" = 0, "rho value" = 0, "p.value" = 0)
+#row.names(Rho_p.value_fixed_df_surface_NMDS1) = colnames(alpha_meta_all_surface)
+  
+  #tibble::column_to_rownames(alpha_meta_all_surface)
+
+#Mantel for MDS1
+MDS1_mantel.dist = dist(alpha_meta_all$MDS1)
+#Mantel for MDS2
+MDS2_mantel.dist = dist(alpha_meta_all$MDS2)
+
+#Carry out spearman - Observed
+spearman_Observed = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df[1,1] = "NMDS1"
+Rho_p.value_fixed_df[1,2] = "Observed"
+Rho_p.value_fixed_df[1,3] = spearman_Observed$estimate 
+Rho_p.value_fixed_df[1,4] = spearman_Observed$p.value  
+#Mantel - Observed
+Observed.dist = dist(alpha_meta_all$Observed)
+Observed_mantel = mantel(MDS1_mantel.dist,Observed.dist, permutations = 999 )
+Observed_mantel #Would want to use the 95% one.
+
+#Carry out spearman - Shannon
+spearman_Shannon = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df[2,1] = "NMDS1"
+Rho_p.value_fixed_df[2,2] = "Shannon"
+Rho_p.value_fixed_df[2,3] = spearman_Shannon$estimate 
+Rho_p.value_fixed_df[2,4] = spearman_Shannon$p.value  
+#Mantel - Shannon
+Shannon.dist = dist(alpha_meta_all$Shannon)
+Shannon_mantel = mantel(MDS1_mantel.dist,Shannon.dist, permutations = 999 )
+Shannon_mantel
+
+#Carry out spearman - Pielou
+spearman_Pielou = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df[3,1] = "NMDS1"
+Rho_p.value_fixed_df[3,2] = "Pielou"
+Rho_p.value_fixed_df[3,3] = spearman_Pielou$estimate
+Rho_p.value_fixed_df[3,4] = spearman_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist = dist(alpha_meta_all$Pielou)
+Pielou_mantel = mantel(MDS1_mantel.dist,Pielou.dist, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_beta_Methyl_D_Glucoside = cor.test(alpha_meta_all$MDS1, alpha_meta_all$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df[4,1] = "NMDS1"
+Rho_p.value_fixed_df[4,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df[4,3] = spearman_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df[4,4] = spearman_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist = dist(alpha_meta_all$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(MDS1_mantel.dist,beta_Methyl_D_Glucoside.dist, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_DGalactonic_Acid_gamma_Lactone = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df[5,1] = "NMDS1"
+Rho_p.value_fixed_df[5,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df[5,3] = spearman_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df[5,4] = spearman_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_LArginine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df[6,1] = "NMDS1"
+Rho_p.value_fixed_df[6,2] = "LArginine"
+Rho_p.value_fixed_df[6,3] = spearman_LArginine$estimate 
+Rho_p.value_fixed_df[6,4] = spearman_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_Pyruvic_Acid_Methyl_Ester = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df[7,1] = "NMDS1"
+Rho_p.value_fixed_df[7,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df[7,3] = spearman_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df[7,4] = spearman_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_DXylose = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df[8,1] = "NMDS1"
+Rho_p.value_fixed_df[8,2] = "DXylose"
+Rho_p.value_fixed_df[8,3] = spearman_DXylose$estimate  
+Rho_p.value_fixed_df[8,4] = spearman_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_DGalacturonic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df[9,1] = "NMDS1"
+Rho_p.value_fixed_df[9,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df[9,3] = spearman_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df[9,4] = spearman_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_LAsparagine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df[10,1] = "NMDS1"
+Rho_p.value_fixed_df[10,2] = "LAsparagine"
+Rho_p.value_fixed_df[10,3] = spearman_LAsparagine$estimate
+Rho_p.value_fixed_df[10,4] = spearman_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_Tween_40 = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df[11,1] = "NMDS1"
+Rho_p.value_fixed_df[11,2] = "Tween_40"
+Rho_p.value_fixed_df[11,3] = spearman_Tween_40$estimate 
+Rho_p.value_fixed_df[11,4] = spearman_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_i_Erythritol = cor.test(alpha_meta_all$MDS1, alpha_meta_all$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df[12,1] = "NMDS1"
+Rho_p.value_fixed_df[12,2] = "i_Erythritol"
+Rho_p.value_fixed_df[12,3] = spearman_i_Erythritol$estimate  
+Rho_p.value_fixed_df[12,4] = spearman_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_X2_Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[13,1] = "NMDS1"
+Rho_p.value_fixed_df[13,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[13,3] = spearman_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df[13,4] = spearman_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_L_Phenylalanine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df[14,1] = "NMDS1"
+Rho_p.value_fixed_df[14,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df[14,3] = spearman_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df[14,4] = spearman_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_Tween_80 = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df[15,1] = "NMDS1"
+Rho_p.value_fixed_df[15,2] = "Tween_80"
+Rho_p.value_fixed_df[15,3] = spearman_Tween_80$estimate 
+Rho_p.value_fixed_df[15,4] = spearman_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_DMannitol = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df[16,1] = "NMDS1"
+Rho_p.value_fixed_df[16,2] = "DMannitol"
+Rho_p.value_fixed_df[16,3] = spearman_DMannitol$estimate 
+Rho_p.value_fixed_df[16,4] = spearman_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_X4Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[17,1] = "NMDS1"
+Rho_p.value_fixed_df[17,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[17,3] = spearman_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df[17,4] = spearman_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_LSerine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df[18,1] = "NMDS1"
+Rho_p.value_fixed_df[18,2] = "LSerine"
+Rho_p.value_fixed_df[18,3] = spearman_LSerine$estimate 
+Rho_p.value_fixed_df[18,4] = spearman_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_alpha_Cyclodextrin = cor.test(alpha_meta_all$MDS1, alpha_meta_all$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df[19,1] = "NMDS1"
+Rho_p.value_fixed_df[19,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df[19,3] = spearman_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df[19,4] = spearman_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_Nacetyl_DGlucosamine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df[20,1] = "NMDS1"
+Rho_p.value_fixed_df[20,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df[20,3] = spearman_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df[20,4] = spearman_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_gamma_Hydroxybutyric_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df[21,1] = "NMDS1"
+Rho_p.value_fixed_df[21,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df[21,3] = spearman_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df[21,4] = spearman_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_L_Threonine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df[22,1] = "NMDS1"
+Rho_p.value_fixed_df[22,2] = "L_Threonine"
+Rho_p.value_fixed_df[22,3] = spearman_L_Threonine$estimate 
+Rho_p.value_fixed_df[22,4] = spearman_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_Glycogen = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df[23,1] = "NMDS1"
+Rho_p.value_fixed_df[23,2] = "Glycogen"
+Rho_p.value_fixed_df[23,3] = spearman_Glycogen$estimate 
+Rho_p.value_fixed_df[23,4] = spearman_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_DGlucosaminic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df[24,1] = "NMDS1"
+Rho_p.value_fixed_df[24,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df[24,3] = spearman_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df[24,4] = spearman_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_Itaconic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df[25,1] = "NMDS1"
+Rho_p.value_fixed_df[25,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df[25,3] = spearman_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df[25,4] = spearman_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_Glycyl_LGlutamic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df[26,1] = "NMDS1"
+Rho_p.value_fixed_df[26,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df[26,3] = spearman_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df[26,4] = spearman_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_DCellobiose = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df[27,1] = "NMDS1"
+Rho_p.value_fixed_df[27,2] = "DCellobiose"
+Rho_p.value_fixed_df[27,3] = spearman_DCellobiose$estimate 
+Rho_p.value_fixed_df[27,4] = spearman_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_Glucos_1Phosphate = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df[28,1] = "NMDS1"
+Rho_p.value_fixed_df[28,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df[28,3] = spearman_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df[28,4] = spearman_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_alpha_Ketobutyric_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df[29,1] = "NMDS1"
+Rho_p.value_fixed_df[29,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df[29,3] = spearman_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df[29,4] = spearman_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_Phenylethyl_amine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df[30,1] = "NMDS1"
+Rho_p.value_fixed_df[30,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df[30,3] = spearman_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df[30,4] = spearman_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_alpha_DLactose = cor.test(alpha_meta_all$MDS1, alpha_meta_all$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df[31,1] = "NMDS1"
+Rho_p.value_fixed_df[31,2] = "alpha_DLactose"
+Rho_p.value_fixed_df[31,3] = spearman_alpha_DLactose$estimate 
+Rho_p.value_fixed_df[31,4] = spearman_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_DL_alpha_Glycerol_Phosphate = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df[32,1] = "NMDS1"
+Rho_p.value_fixed_df[32,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df[32,3] = spearman_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df[32,4] = spearman_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_DMalic_Acid = cor.test(alpha_meta_all$MDS1, alpha_meta_all$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df[33,1] = "NMDS1"
+Rho_p.value_fixed_df[33,2] = "DMalic_Acid"
+Rho_p.value_fixed_df[33,3] = spearman_DMalic_Acid$estimate 
+Rho_p.value_fixed_df[33,4] = spearman_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_Putrescine = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df[34,1] = "NMDS1"
+Rho_p.value_fixed_df[34,2] = "Putrescine"
+Rho_p.value_fixed_df[34,3] = spearman_Putrescine$estimate 
+Rho_p.value_fixed_df[34,4] = spearman_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_Bacterial_abundance = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df[35,1] = "NMDS1"
+Rho_p.value_fixed_df[35,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df[35,3] = spearman_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df[35,4] = spearman_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_Bacterial_activity = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df[36,1] = "NMDS1"
+Rho_p.value_fixed_df[36,2] = "Bacterial_activity"
+Rho_p.value_fixed_df[36,3] = spearman_Bacterial_activity$estimate 
+Rho_p.value_fixed_df[36,4] = spearman_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_Sample_Depth = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df[37,1] = "NMDS1"
+Rho_p.value_fixed_df[37,2] = "Sample_Depth"
+Rho_p.value_fixed_df[37,3] = spearman_Sample_Depth$estimate 
+Rho_p.value_fixed_df[37,4] = spearman_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_Sample_Site = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df[38,1] = "NMDS1"
+Rho_p.value_fixed_df[38,2] = "Sample_Site"
+Rho_p.value_fixed_df[38,3] = spearman_Sample_Site$estimate 
+Rho_p.value_fixed_df[38,4] = spearman_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_Salinity = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df[39,1] = "NMDS1"
+Rho_p.value_fixed_df[39,2] = "Salinity"
+Rho_p.value_fixed_df[39,3] = spearman_Salinity$estimate 
+Rho_p.value_fixed_df[39,4] = spearman_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_OxygenPerSat = cor.test(alpha_meta_all$MDS1, alpha_meta_all$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df[40,1] = "NMDS1"
+Rho_p.value_fixed_df[40,2] = "OxygenPerSat"
+Rho_p.value_fixed_df[40,3] = spearman_OxygenPerSat$estimate 
+Rho_p.value_fixed_df[40,4] = spearman_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_Temperature = cor.test(alpha_meta_all$MDS1, alpha_meta_all$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df[41,1] = "NMDS1"
+Rho_p.value_fixed_df[41,2] = "Temperature"
+Rho_p.value_fixed_df[41,3] = spearman_Temperature$estimate 
+Rho_p.value_fixed_df[41,4] = spearman_Temperature$p.value 
+
+```
+```{r NMDS 2}
+#Carry out spearman - Observed
+spearman_Observed = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Observed, method = "spearman")
+#Ties are present due to sample repeats.
+#Extract rho and p-value - Observed
+Rho_p.value_fixed_df[42,1] = "NMDS2"
+Rho_p.value_fixed_df[42,2] = "Observed"
+Rho_p.value_fixed_df[42,3] = spearman_Observed$estimate 
+Rho_p.value_fixed_df[42,4] = spearman_Observed$p.value  
+#Mantel - Observed
+Observed.dist = dist(alpha_meta_all$Observed)
+Observed_mantel = mantel(NMDS2_mantel.dist,Observed.dist, permutations = 999 )
+Observed_mantel #Would want to use the 95% one.
+
+#Carry out spearman - Shannon
+spearman_Shannon = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Shannon, method = "spearman")
+#Extract rho and p-value - Shannon
+Rho_p.value_fixed_df[43,1] = "NMDS2"
+Rho_p.value_fixed_df[43,2] = "Shannon"
+Rho_p.value_fixed_df[43,3] = spearman_Shannon$estimate 
+Rho_p.value_fixed_df[43,4] = spearman_Shannon$p.value  
+#Mantel - Shannon
+Shannon.dist = dist(alpha_meta_all$Shannon)
+Shannon_mantel = mantel(NMDS2_mantel.dist,Shannon.dist, permutations = 999 )
+Shannon_mantel
+
+#Carry out spearman - Pielou
+spearman_Pielou = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Pielou, method = "spearman")
+#Extract rho and p-value - Pielou
+Rho_p.value_fixed_df[44,1] 8= "NMDS2"
+Rho_p.value_fixed_df[44,2] = "Pielou"
+Rho_p.value_fixed_df[44,3] = spearman_Pielou$estimate
+Rho_p.value_fixed_df[44,4] = spearman_Pielou$p.value
+#Mantel - Pielou
+Pielou.dist = dist(alpha_meta_all$Pielou)
+Pielou_mantel = mantel(NMDS2_mantel.dist,Pielou.dist, permutations = 999 )
+Pielou_mantel
+
+#Carry out spearman - beta_Methyl_D_Glucoside
+spearman_beta_Methyl_D_Glucoside = cor.test(alpha_meta_all$MDS2, alpha_meta_all$beta_Methyl_D_Glucoside, method = "spearman")
+#Extract rho and p-value - beta_Methyl_D_Glucoside
+Rho_p.value_fixed_df[45,1] = "NMDS2"
+Rho_p.value_fixed_df[45,2] = "beta_Methyl_D_Glucoside"
+Rho_p.value_fixed_df[45,3] = spearman_beta_Methyl_D_Glucoside$estimate
+Rho_p.value_fixed_df[45,4] = spearman_beta_Methyl_D_Glucoside$p.value  
+#Mantel - beta_Methyl_D_Glucoside
+beta_Methyl_D_Glucoside.dist = dist(alpha_meta_all$beta_Methyl_D_Glucoside)
+beta_Methyl_D_Glucoside_mantel = mantel(NMDS2_mantel.dist,beta_Methyl_D_Glucoside.dist, permutations = 999 )
+beta_Methyl_D_Glucoside_mantel
+
+#Carry out spearman - DGalactonic_Acid_gamma_Lactone
+spearman_DGalactonic_Acid_gamma_Lactone = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DGalactonic_Acid_gamma_Lactone, method = "spearman")
+#Extract rho and p-value - DGalactonic_Acid_gamma_Lactone
+Rho_p.value_fixed_df[46,1] = "NMDS2"
+Rho_p.value_fixed_df[46,2] = "DGalactonic_Acid_gamma_Lactone"
+Rho_p.value_fixed_df[46,3] = spearman_DGalactonic_Acid_gamma_Lactone$estimate 
+Rho_p.value_fixed_df[46,4] = spearman_DGalactonic_Acid_gamma_Lactone$p.value 
+
+
+#Carry out spearman - LArginine
+spearman_LArginine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$LArginine, method = "spearman")
+#Extract rho and p-value - LArginine
+Rho_p.value_fixed_df[47,1] = "NMDS2"
+Rho_p.value_fixed_df[47,2] = "LArginine"
+Rho_p.value_fixed_df[47,3] = spearman_LArginine$estimate 
+Rho_p.value_fixed_df[47,4] = spearman_LArginine$p.value  
+
+
+#Carry out spearman - Pyruvic_Acid_Methyl_Ester
+spearman_Pyruvic_Acid_Methyl_Ester = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Pyruvic_Acid_Methyl_Ester, method = "spearman")
+#Extract rho and p-value - Pyruvic_Acid_Methyl_Ester
+Rho_p.value_fixed_df[48,1] = "NMDS2"
+Rho_p.value_fixed_df[48,2] = "Pyruvic_Acid_Methyl_Ester"
+Rho_p.value_fixed_df[48,3] = spearman_Pyruvic_Acid_Methyl_Ester$estimate 
+Rho_p.value_fixed_df[48,4] = spearman_Pyruvic_Acid_Methyl_Ester$p.value  
+
+#Carry out spearman - DXylose
+spearman_DXylose = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DXylose, method = "spearman")
+#Extract rho and p-value - DXylose
+Rho_p.value_fixed_df[49,1] = "NMDS2"
+Rho_p.value_fixed_df[49,2] = "DXylose"
+Rho_p.value_fixed_df[49,3] = spearman_DXylose$estimate  
+Rho_p.value_fixed_df[49,4] = spearman_DXylose$p.value  
+
+#Carry out spearman - DGalacturonic_Acid
+spearman_DGalacturonic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DGalacturonic_Acid, method = "spearman")
+#Extract rho and p-value - DGalacturonic_Acid
+Rho_p.value_fixed_df[50,1] = "NMDS2"
+Rho_p.value_fixed_df[50,2] = "DGalacturonic_Acid"
+Rho_p.value_fixed_df[50,3] = spearman_DGalacturonic_Acid$estimate 
+Rho_p.value_fixed_df[50,4] = spearman_DGalacturonic_Acid$p.value  
+
+#Carry out spearman - LAsparagine
+spearman_LAsparagine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$LAsparagine, method = "spearman")
+#Extract rho and p-value - LAsparagine
+Rho_p.value_fixed_df[51,1] = "NMDS2"
+Rho_p.value_fixed_df[51,2] = "LAsparagine"
+Rho_p.value_fixed_df[51,3] = spearman_LAsparagine$estimate
+Rho_p.value_fixed_df[51,4] = spearman_LAsparagine$p.value 
+
+#Carry out spearman - Tween_40
+spearman_Tween_40 = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Tween_40, method = "spearman")
+#Extract rho and p-value - Tween_40
+Rho_p.value_fixed_df[52,1] = "NMDS2"
+Rho_p.value_fixed_df[52,2] = "Tween_40"
+Rho_p.value_fixed_df[52,3] = spearman_Tween_40$estimate 
+Rho_p.value_fixed_df[52,4] = spearman_Tween_40$p.value  
+
+#Carry out spearman - i_Erythritol
+spearman_i_Erythritol = cor.test(alpha_meta_all$MDS2, alpha_meta_all$i_Erythritol, method = "spearman")
+#Extract rho and p-value - i_Erythritol
+Rho_p.value_fixed_df[53,1] = "NMDS2"
+Rho_p.value_fixed_df[53,2] = "i_Erythritol"
+Rho_p.value_fixed_df[53,3] = spearman_i_Erythritol$estimate  
+Rho_p.value_fixed_df[53,4] = spearman_i_Erythritol$p.value  
+
+#Carry out spearman - X2_Hydroxy_Benzoic_Acid
+spearman_X2_Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$X2_Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X2_Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[54,1] = "NMDS2"
+Rho_p.value_fixed_df[54,2] = "X2_Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[54,3] = spearman_X2_Hydroxy_Benzoic_Acid$estimate 
+Rho_p.value_fixed_df[54,4] = spearman_X2_Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - L_Phenylalanine
+spearman_L_Phenylalanine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$L_Phenylalanine, method = "spearman")
+#Extract rho and p-value - L_Phenylalanine
+Rho_p.value_fixed_df[55,1] = "NMDS2"
+Rho_p.value_fixed_df[55,2] = "L_Phenylalanine"
+Rho_p.value_fixed_df[55,3] = spearman_L_Phenylalanine$estimate 
+Rho_p.value_fixed_df[55,4] = spearman_L_Phenylalanine$p.value  
+
+#Carry out spearman - Tween_80
+spearman_Tween_80 = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Tween_80, method = "spearman")
+#Extract rho and p-value - Tween_80
+Rho_p.value_fixed_df[56,1] = "NMDS2"
+Rho_p.value_fixed_df[56,2] = "Tween_80"
+Rho_p.value_fixed_df[56,3] = spearman_Tween_80$estimate 
+Rho_p.value_fixed_df[56,4] = spearman_Tween_80$p.value  
+
+#Carry out spearman - DMannitol
+spearman_DMannitol = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DMannitol, method = "spearman")
+#Extract rho and p-value - DMannitol
+Rho_p.value_fixed_df[57,1] = "NMDS2"
+Rho_p.value_fixed_df[57,2] = "DMannitol"
+Rho_p.value_fixed_df[57,3] = spearman_DMannitol$estimate 
+Rho_p.value_fixed_df[57,4] = spearman_DMannitol$p.value  
+
+#Carry out spearman - X4Hydroxy_Benzoic_Acid
+spearman_X4Hydroxy_Benzoic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$X4Hydroxy_Benzoic_Acid, method = "spearman")
+#Extract rho and p-value - X4Hydroxy_Benzoic_Acid
+Rho_p.value_fixed_df[58,1] = "NMDS2"
+Rho_p.value_fixed_df[58,2] = "X4Hydroxy_Benzoic_Acid"
+Rho_p.value_fixed_df[58,3] = spearman_X4Hydroxy_Benzoic_Acid$estimate  
+Rho_p.value_fixed_df[58,4] = spearman_X4Hydroxy_Benzoic_Acid$p.value  
+
+#Carry out spearman - LSerine
+spearman_LSerine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$LSerine, method = "spearman")
+#Extract rho and p-value - LSerine
+Rho_p.value_fixed_df[59,1] = "NMDS2"
+Rho_p.value_fixed_df[59,2] = "LSerine"
+Rho_p.value_fixed_df[59,3] = spearman_LSerine$estimate 
+Rho_p.value_fixed_df[59,4] = spearman_LSerine$p.value  
+
+#Carry out spearman - alpha_Cyclodextrin
+spearman_alpha_Cyclodextrin = cor.test(alpha_meta_all$MDS2, alpha_meta_all$alpha_Cyclodextrin, method = "spearman")
+#Extract rho and p-value - alpha_Cyclodextrin
+Rho_p.value_fixed_df[60,1] = "NMDS2"
+Rho_p.value_fixed_df[60,2] = "alpha_Cyclodextrin"
+Rho_p.value_fixed_df[60,3] = spearman_alpha_Cyclodextrin$estimate
+Rho_p.value_fixed_df[60,4] = spearman_alpha_Cyclodextrin$p.value 
+
+#Carry out spearman - Nacetyl_DGlucosamine
+spearman_Nacetyl_DGlucosamine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Nacetyl_DGlucosamine, method = "spearman")
+#Extract rho and p-value - Nacetyl_DGlucosamine
+Rho_p.value_fixed_df[61,1] = "NMDS2"
+Rho_p.value_fixed_df[61,2] = "Nacetyl_DGlucosamine"
+Rho_p.value_fixed_df[61,3] = spearman_Nacetyl_DGlucosamine$estimate 
+Rho_p.value_fixed_df[61,4] = spearman_Nacetyl_DGlucosamine$p.value  
+
+#Carry out spearman - gamma_Hydroxybutyric_Acid
+spearman_gamma_Hydroxybutyric_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$gamma_Hydroxybutyric_Acid, method = "spearman")
+#Extract rho and p-value - gamma_Hydroxybutyric_Acid
+Rho_p.value_fixed_df[62,1] = "NMDS2"
+Rho_p.value_fixed_df[62,2] = "gamma_Hydroxybutyric_Acid"
+Rho_p.value_fixed_df[62,3] = spearman_gamma_Hydroxybutyric_Acid$estimate 
+Rho_p.value_fixed_df[62,4] = spearman_gamma_Hydroxybutyric_Acid$p.value  
+
+#Carry out spearman - L_Threonine
+spearman_L_Threonine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$L_Threonine, method = "spearman")
+#Extract rho and p-value - L_Threonine
+Rho_p.value_fixed_df[63,1] = "NMDS2"
+Rho_p.value_fixed_df[63,2] = "L_Threonine"
+Rho_p.value_fixed_df[63,3] = spearman_L_Threonine$estimate 
+Rho_p.value_fixed_df[63,4] = spearman_L_Threonine$p.value  
+
+#Carry out spearman - Glycogen
+spearman_Glycogen = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Glycogen, method = "spearman")
+#Extract rho and p-value - Glycogen
+Rho_p.value_fixed_df[64,1] = "NMDS2"
+Rho_p.value_fixed_df[64,2] = "Glycogen"
+Rho_p.value_fixed_df[64,3] = spearman_Glycogen$estimate 
+Rho_p.value_fixed_df[64,4] = spearman_Glycogen$p.value  
+
+#Carry out spearman - DGlucosaminic_Acid
+spearman_DGlucosaminic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DGlucosaminic_Acid, method = "spearman")
+#Extract rho and p-value - DGlucosaminic_Acid
+Rho_p.value_fixed_df[65,1] = "NMDS2"
+Rho_p.value_fixed_df[65,2] = "DGlucosaminic_Acid"
+Rho_p.value_fixed_df[65,3] = spearman_DGlucosaminic_Acid$estimate 
+Rho_p.value_fixed_df[65,4] = spearman_DGlucosaminic_Acid$p.value  
+
+#Carry out spearman - Itaconic_Acid
+spearman_Itaconic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Itaconic_Acid, method = "spearman")
+#Extract rho and p-value - Itaconic_Acid
+Rho_p.value_fixed_df[66,1] = "NMDS2"
+Rho_p.value_fixed_df[66,2] = "Itaconic_Acid"
+Rho_p.value_fixed_df[66,3] = spearman_Itaconic_Acid$estimate 
+Rho_p.value_fixed_df[66,4] = spearman_Itaconic_Acid$p.value  
+
+#Carry out spearman - Glycyl_LGlutamic_Acid
+spearman_Glycyl_LGlutamic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Glycyl_LGlutamic_Acid, method = "spearman")
+#Extract rho and p-value - Glycyl_LGlutamic_Acid
+Rho_p.value_fixed_df[67,1] = "NMDS2"
+Rho_p.value_fixed_df[67,2] = "Glycyl_LGlutamic_Acid"
+Rho_p.value_fixed_df[67,3] = spearman_Glycyl_LGlutamic_Acid$estimate 
+Rho_p.value_fixed_df[67,4] = spearman_Glycyl_LGlutamic_Acid$p.value  
+
+#Carry out spearman - DCellobiose
+spearman_DCellobiose = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DCellobiose, method = "spearman")
+#Extract rho and p-value - DCellobiose
+Rho_p.value_fixed_df[68,1] = "NMDS2"
+Rho_p.value_fixed_df[68,2] = "DCellobiose"
+Rho_p.value_fixed_df[68,3] = spearman_DCellobiose$estimate 
+Rho_p.value_fixed_df[68,4] = spearman_DCellobiose$p.value  
+
+#Carry out spearman - Glucos_1Phosphate
+spearman_Glucos_1Phosphate = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Glucos_1Phosphate, method = "spearman")
+#Extract rho and p-value - Glucos_1Phosphate
+Rho_p.value_fixed_df[69,1] = "NMDS2"
+Rho_p.value_fixed_df[69,2] = "Glucos_1Phosphate"
+Rho_p.value_fixed_df[69,3] = spearman_Glucos_1Phosphate$estimate 
+Rho_p.value_fixed_df[69,4] = spearman_Glucos_1Phosphate$p.value  
+
+#Carry out spearman - alpha_Ketobutyric_Acid
+spearman_alpha_Ketobutyric_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$alpha_Ketobutyric_Acid, method = "spearman")
+#Extract rho and p-value - alpha_Ketobutyric_Acid
+Rho_p.value_fixed_df[70,1] = "NMDS2"
+Rho_p.value_fixed_df[70,2] = "alpha_Ketobutyric_Acid"
+Rho_p.value_fixed_df[70,3] = spearman_alpha_Ketobutyric_Acid$estimate 
+Rho_p.value_fixed_df[70,4] = spearman_alpha_Ketobutyric_Acid$p.value  
+
+#Carry out spearman - Phenylethyl_amine
+spearman_Phenylethyl_amine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Phenylethyl_amine, method = "spearman")
+#Extract rho and p-value - Phenylethyl_amine
+Rho_p.value_fixed_df[71,1] = "NMDS2"
+Rho_p.value_fixed_df[71,2] = "Phenylethyl_amine"
+Rho_p.value_fixed_df[71,3] = spearman_Phenylethyl_amine$estimate 
+Rho_p.value_fixed_df[71,4] = spearman_Phenylethyl_amine$p.value  
+
+#Carry out spearman - alpha_DLactose
+spearman_alpha_DLactose = cor.test(alpha_meta_all$MDS2, alpha_meta_all$alpha_DLactose, method = "spearman")
+#Extract rho and p-value - alpha_DLactose
+Rho_p.value_fixed_df[72,1] = "NMDS2"
+Rho_p.value_fixed_df[72,2] = "alpha_DLactose"
+Rho_p.value_fixed_df[72,3] = spearman_alpha_DLactose$estimate 
+Rho_p.value_fixed_df[72,4] = spearman_alpha_DLactose$p.value  
+
+#Carry out spearman - DL_alpha_Glycerol_Phosphate
+spearman_DL_alpha_Glycerol_Phosphate = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DL_alpha_Glycerol_Phosphate, method = "spearman")
+#Extract rho and p-value - DL_alpha_Glycerol_Phosphate
+Rho_p.value_fixed_df[73,1] = "NMDS2"
+Rho_p.value_fixed_df[73,2] = "DL_alpha_Glycerol_Phosphate"
+Rho_p.value_fixed_df[73,3] = spearman_DL_alpha_Glycerol_Phosphate$estimate
+Rho_p.value_fixed_df[73,4] = spearman_DL_alpha_Glycerol_Phosphate$p.value  
+
+#Carry out spearman - DMalic_Acid
+spearman_DMalic_Acid = cor.test(alpha_meta_all$MDS2, alpha_meta_all$DMalic_Acid, method = "spearman")
+#Extract rho and p-value - DMalic_Acid
+Rho_p.value_fixed_df[74,1] = "NMDS2"
+Rho_p.value_fixed_df[74,2] = "DMalic_Acid"
+Rho_p.value_fixed_df[74,3] = spearman_DMalic_Acid$estimate 
+Rho_p.value_fixed_df[74,4] = spearman_DMalic_Acid$p.value  
+
+#Carry out spearman - Putrescine
+spearman_Putrescine = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Putrescine, method = "spearman")
+#Extract rho and p-value - Putrescine
+Rho_p.value_fixed_df[75,1] = "NMDS2"
+Rho_p.value_fixed_df[75,2] = "Putrescine"
+Rho_p.value_fixed_df[75,3] = spearman_Putrescine$estimate 
+Rho_p.value_fixed_df[75,4] = spearman_Putrescine$p.value  
+
+#Carry out spearman - Bacterial_abundance
+spearman_Bacterial_abundance = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Bacterial_abundance, method = "spearman")
+#Extract rho and p-value - Bacterial_abundance
+Rho_p.value_fixed_df[76,1] = "NMDS2"
+Rho_p.value_fixed_df[76,2] = "Bacterial_abundance"
+Rho_p.value_fixed_df[76,3] = spearman_Bacterial_abundance$estimate 
+Rho_p.value_fixed_df[76,4] = spearman_Bacterial_abundance$p.value  
+
+#Carry out spearman - Bacterial_activity
+spearman_Bacterial_activity = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Bacterial_activity, method = "spearman")
+#Extract rho and p-value - Bacterial_activity
+Rho_p.value_fixed_df[77,1] = "NMDS2"
+Rho_p.value_fixed_df[77,2] = "Bacterial_activity"
+Rho_p.value_fixed_df[77,3] = spearman_Bacterial_activity$estimate 
+Rho_p.value_fixed_df[77,4] = spearman_Bacterial_activity$p.value  
+
+#Carry out spearman - Sample_Depth
+spearman_Sample_Depth = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Sample_Depth, method = "spearman")
+#Extract rho and p-value - Sample_Depth
+Rho_p.value_fixed_df[78,1] = "NMDS2"
+Rho_p.value_fixed_df[78,2] = "Sample_Depth"
+Rho_p.value_fixed_df[78,3] = spearman_Sample_Depth$estimate 
+Rho_p.value_fixed_df[78,4] = spearman_Sample_Depth$p.value  
+
+#Carry out spearman - Sample_Site
+spearman_Sample_Site = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Sample_Site, method = "spearman")
+#Extract rho and p-value - Sample_Site
+Rho_p.value_fixed_df[79,1] = "NMDS2"
+Rho_p.value_fixed_df[79,2] = "Sample_Site"
+Rho_p.value_fixed_df[79,3] = spearman_Sample_Site$estimate 
+Rho_p.value_fixed_df[79,4] = spearman_Sample_Site$p.value  
+
+#Carry out spearman - Salinity
+spearman_Salinity = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Salinity, method = "spearman")
+#Extract rho and p-value - Salinity
+Rho_p.value_fixed_df[80,1] = "NMDS2"
+Rho_p.value_fixed_df[80,2] = "Salinity"
+Rho_p.value_fixed_df[80,3] = spearman_Salinity$estimate 
+Rho_p.value_fixed_df[80,4] = spearman_Salinity$p.value  
+
+#Carry out spearman - OxygenPerSat
+spearman_OxygenPerSat = cor.test(alpha_meta_all$MDS2, alpha_meta_all$OxygenPerSat, method = "spearman")
+#Extract rho and p-value - OxygenPerSat
+Rho_p.value_fixed_df[81,1] = "NMDS2"
+Rho_p.value_fixed_df[81,2] = "OxygenPerSat"
+Rho_p.value_fixed_df[81,3] = spearman_OxygenPerSat$estimate 
+Rho_p.value_fixed_df[81,4] = spearman_OxygenPerSat$p.value  
+
+#Carry out spearman - Temperature
+spearman_Temperature = cor.test(alpha_meta_all$MDS2, alpha_meta_all$Temperature, method = "spearman")
+#Extract rho and p-value - Temperature
+Rho_p.value_fixed_df[82,1] = "NMDS2"
+Rho_p.value_fixed_df[82,2] = "Temperature"
+Rho_p.value_fixed_df[82,3] = spearman_Temperature$estimate 
+Rho_p.value_fixed_df[82,4] = spearman_Temperature$p.value 
+
+```
+```{r adjusted p value}
+#Carry out bonferroni correction
+adjusted_p.value = p.adjust(Rho_p.value_fixed_df$p.value, method = "bonferroni")
+
+#Convert list into dataframe to add to summary table.
+adjusted_p.value = as.data.frame(adjusted_p.value)
+
+
+#Bind adjusted p-value onto data frame
+Spearman = cbind(Rho_p.value_fixed_df, adjusted_p.value$adjusted_p.value)
+
+#Rename adjusted p value column
+colnames(Spearman)[which(names(Spearman) == "adjusted_p.value$adjusted_p.value")] <- "adjusted_p_value"
+
+
+```
+```{r Extract table}
+#Extract the whole dataframe for records
+write.csv(Spearman, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Spearman_withsignificance_adjusted.csv")
+
+#Subset to only the statistically significant values
+onlysignificance = subset(Spearman, p.value < 5e-2)
+
+#Extract the significant values
+write.csv(onlysignificance, "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Vert/Spearman_student_onlysignificant.csv")
+
+```
+
+
+
+
+
+

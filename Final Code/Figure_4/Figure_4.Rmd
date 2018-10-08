@@ -1,0 +1,466 @@
+---
+title: "Figure_4"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Produce the phyloseq object according to figure 3.
+
+```{r Make changes to the phyloseq object}
+
+#Merge into phyloseq format
+
+
+bmsd_dataframe = data.frame(bmsd_PCA)
+bmsd_dataframe_no_name = within(bmsd_dataframe, rm("New_Name")) #remove the new name column
+
+bmsd_dataframe_no_name_NA = na.omit(bmsd_dataframe_no_name)
+
+bmsd_dataframe_no_name_NA_Duin0 = bmsd_dataframe_no_name_NA[-c(13), ] #remove row 13
+bmsd_dataframe_no_name_NA_Win0 = bmsd_dataframe_no_name_NA_Duin0[-c(31), ] #remove row 31
+
+is.na(bmsd_dataframe_no_name_NA)
+
+bmsd_rm_Long = bmsd_dataframe_no_name_NA
+bmsd_rm_Long[1:16] = list(NULL)
+bmsd_rm_Long[17:21] = list(NULL)
+
+```
+
+#Carbon utilisation
+```{r Organise dataframe}
+#Attempting to make a new thing. I can't seem to attach the site and in/out to the PCA plot.
+write.csv(bmsd_rm_Long,file = "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/Csv_df.csv")
+try_otherwayround = read.csv("/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/Csv_df.csv", row.names = 1)
+    write.csv(try_otherwayround,file =
+                "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/try_otherwayround.csv")
+    
+gettingtedious = within(try_otherwayround, rm("Depth","In_out","Site"))
+gettingtediouswith = within(try_otherwayround, rm())
+
+write.csv(gettingtedious,file = "/Users/sven/Desktop/Project_R_analysis/Microbial_community/Figure_2_Hor/gettingtedious.csv")
+
+gettingtedious_hor = gettingtedious[-c(13,10,11,12),]
+
+```
+```{r Set up Bray}
+#Export for Bray distance plot
+write.csv(gettingtedious_hor, "Bray_Ecolog_df_setup.csv")
+#Add depth and site as columns.
+
+#Import new df
+Ecolog_bray_df_variables = read.csv("Bray_Ecolog_df_setup.csv", row.names = 1)
+Ecolog_bray_df = Ecolog_bray_df_variables[,-c(32,33)]
+
+Ecolog_bray = vegdist(Ecolog_bray_df, method = "bray", binary = T)
+
+Ecolog_df_bray = as.matrix(Ecolog_bray)
+Ecolog_df_bray = as.data.frame(Ecolog_df_bray)
+
+#Export for record keeping
+write.csv(Ecolog_df_bray, "Ecolog_bray_df.csv")
+
+#Import the bray distance df
+Firstref_bray_ecolog_df = read.csv("Firstref_bray_ecolog_df.csv", row.names = 1)
+
+#Add Sample Depth as column
+
+Firstref_bray_ecolog_df$Sample_Depth = NA
+
+Firstref_bray_ecolog_df[1,2] = 0
+Firstref_bray_ecolog_df[2,2] = 10
+Firstref_bray_ecolog_df[3,2] = 0
+Firstref_bray_ecolog_df[4,2] = 10
+Firstref_bray_ecolog_df[5,2] = 0
+Firstref_bray_ecolog_df[6,2] = 10
+Firstref_bray_ecolog_df[7,2] = 0
+Firstref_bray_ecolog_df[8,2] = 0
+Firstref_bray_ecolog_df[9,2] = 10
+Firstref_bray_ecolog_df[10,2] = 0
+Firstref_bray_ecolog_df[11,2] = 0
+Firstref_bray_ecolog_df[12,2] = 0
+
+#Make a df with distances from reference - this was calculated using an online calculator and the coordinates from the GPS gatehred during sampling.
+Distance_list_surface = c("L1z1" = 0, "L2z0" = 5.59, "L3z0" = 14.3, "L4z0" = 10.67, "L5z0" = 8.47, "L6z0" = 4.73, "L7z0" = 3.16, "L8z0" = 2.47)
+
+#Add distance from reference as column
+Firstref_bray_ecolog_df$Distancefrom_L1 = NA
+
+#Add distances according to this list
+as.data.frame(Distance_list_surface)
+
+Firstref_bray_ecolog_df[1,3] = 0
+Firstref_bray_ecolog_df[2,3] = 0
+Firstref_bray_ecolog_df[3,3] = 5.59
+Firstref_bray_ecolog_df[4,3] = 5.59
+Firstref_bray_ecolog_df[5,3] = 14.3
+Firstref_bray_ecolog_df[6,3] = 14.3
+Firstref_bray_ecolog_df[7,3] = 10.67
+Firstref_bray_ecolog_df[8,3] = 8.47
+Firstref_bray_ecolog_df[9,3] = 8.47
+Firstref_bray_ecolog_df[10,3] = 4.73
+Firstref_bray_ecolog_df[11,3] = 3.16
+Firstref_bray_ecolog_df[12,3] = 2.47
+
+#Exclude samples comapring surface to 10m
+Surface_reference_ecolog = subset(Firstref_bray_ecolog_df, Sample_Depth == "0")
+
+#Import the df when we used the L1 10m sample as a reference.
+D10_ecolog_ref = read.csv("Ecolog_bray_df.csv", row.names = 1)
+D10_ecolog_ref = D10_ecolog_ref[,-c(3:12)]
+
+D10_ecolog_ref$Sample_Depth = NA
+
+D10_ecolog_ref[1,3] = 0
+D10_ecolog_ref[2,3] = 10
+D10_ecolog_ref[3,3] = 0
+D10_ecolog_ref[4,3] = 10
+D10_ecolog_ref[5,3] = 0
+D10_ecolog_ref[6,3] = 10
+D10_ecolog_ref[7,3] = 0
+D10_ecolog_ref[8,3] = 0
+D10_ecolog_ref[9,3] = 10
+D10_ecolog_ref[10,3] = 0
+D10_ecolog_ref[11,3] = 0
+D10_ecolog_ref[12,3] = 0
+
+#Add distance from reference as column
+D10_ecolog_ref$Distancefrom_L1 = NA
+
+#Add distances according to this list
+as.data.frame(Distance_list_surface)
+
+D10_ecolog_ref[1,4] = 0
+D10_ecolog_ref[2,4] = 0
+D10_ecolog_ref[3,4] = 5.59
+D10_ecolog_ref[4,4] = 5.59
+D10_ecolog_ref[5,4] = 14.3
+D10_ecolog_ref[6,4] = 14.3
+D10_ecolog_ref[7,4] = 10.67
+D10_ecolog_ref[8,4] = 8.47
+D10_ecolog_ref[9,4] = 8.47
+D10_ecolog_ref[10,4] = 4.73
+D10_ecolog_ref[11,4] = 3.16
+D10_ecolog_ref[12,4] = 2.47
+
+
+
+#Exclude samples comparing 10m to surface
+D10_reference_ecolog = subset(D10_ecolog_ref, Sample_Depth == "10")
+D10_reference_ecolog = D10_reference_ecolog[,-c(1)]
+colnames(D10_reference_ecolog)[1] = "Bray_Distance"
+
+library(ggplot2)
+
+#Join the two dfs together.
+Both_ecolog_ref_df = rbind(Surface_reference_ecolog, D10_reference_ecolog)
+
+
+First_ref_ecolog_plot = ggplot(Both_ecolog_ref_df, 
+                               aes(y = Bray_Distance, 
+                                   x= Distancefrom_L1,
+                                   colour = as.factor(Sample_Depth))) +
+  geom_smooth(method = "lm") +
+  geom_point() +
+  xlab("Distance from the \n outermost sample (km)") +
+  ylab("Bray-Curtis distance between \n carbon utilisation")+
+  labs(colour = "Sample Depth (m)")
+
+First_ref_ecolog_plot
+
+dev.copy(png, "Firstref_ecolog_bray", units = "in", width = 4, height = 3.2, res = 500)
+dev.off()
+
+```
+```{r Statistics - between horizontal location and dissimilairty}
+#Use Bray-distance not raw data
+Ecolog_surface_spearman = cor.test(Surface_reference_ecolog$Bray_Distance, Surface_reference_ecolog$Distancefrom_L1, method = "spearman")
+#rho = 0.1905 for Distance vs. Bray
+
+Ecolog_D10_spearman = cor.test(D10_reference_ecolog$Bray_Distance, D10_reference_ecolog$Distancefrom_L1, method = "spearman")
+#rho = 0.1 for Distance vs. Bray - probably not enough samples
+
+Ecolog_spearman = cor(Both_ecolog_ref_df, method = "spearman")
+Ecolog_spearman
+#rho = 0.5326 for Distance vs. Bray
+
+```
+```{r p-value at surface}
+
+#Add distances according to this list
+Ecolog_surface_df= data.frame(lapply(Ecolog_hor_surface_df, as.numeric), stringsAsFactors = T)#Extract data in the form of numeric values.
+rownames(Ecolog_surface_df) = rownames(Ecolog_hor_surface_df)  #Make sure rownames are attached for easier identification
+
+as.data.frame(Distance_list_surface)
+
+Ecolog_surface_df[1,32] = 0
+Ecolog_surface_df[2,32] = 5.59
+Ecolog_surface_df[3,32] = 14.3
+Ecolog_surface_df[4,32] = 10.67
+Ecolog_surface_df[5,32] = 8.47
+Ecolog_surface_df[6,32] = 4.73
+Ecolog_surface_df[7,32] = 3.16
+Ecolog_surface_df[8,32] = 2.47
+
+colnames(Ecolog_surface_df)[32] = "Distancefrom_L1"
+
+
+#Adonis test
+Ecolog_adonis_distance_surface = adonis(Ecolog_surface.dist ~
+                                       Distancefrom_L1,
+                           data = Ecolog_surface_df,
+                           permutations = 999
+                           )
+Ecolog_adonis_distance_surface
+#p-value - 0.694
+
+```
+```{r p-value at 10m}
+
+#Add distances according to this list
+Ecolog_10m_df= data.frame(lapply(Ecolog_hor_10m_df, as.numeric), stringsAsFactors = T)#Extract data in the form of numeric values.
+rownames(Ecolog_10m_df) = rownames(Ecolog_hor_10m_df)  #Make sure rownames are attached for easier identification
+
+as.data.frame(Distance_list_surface)
+
+Ecolog_10m_df[1,32] = 0
+Ecolog_10m_df[2,32] = 5.59
+Ecolog_10m_df[3,32] = 14.3
+Ecolog_10m_df[4,32] = 8.47
+
+
+colnames(Ecolog_10m_df)[32] = "Distancefrom_L1"
+
+
+#Adonis test
+Ecolog_adonis_distance_10m = adonis(Ecolog_10m.dist ~
+                                       Distancefrom_L1,
+                           data = Ecolog_10m_df,
+                           permutations = 999
+                           )
+Ecolog_adonis_distance_10m #0.04167
+
+```
+
+#Physiochemical parameters
+```{r Surface regressions}
+
+Arranged_CTD_surface_df = arrange(CTD_surface_df, Distancefrom_L1)
+
+
+par(mar = c(5,5,2,5)) #Define plot margins
+with(plot(Arranged_CTD_surface_df$Distancefrom_L1, #X-axis 
+          Arranged_CTD_surface_df$Temperature, #Y-axis
+     col = "red",  #Colour
+     type = "l", #Plot type
+     xlab = "Distance from the outermost sample (km)", #X-axis label
+     ylab = "Temperature (˚C) and Oxygen Saturation (%)",
+     ylim = c(5,13))) #Y-axis label
+
+par(new = T)
+with(plot(Arranged_CTD_surface_df$Distancefrom_L1, #X-axis
+          Arranged_CTD_surface_df$Salinity, #Y-axis
+          col = "blue", #Make the line blue
+          type = "l", #Make it a line graph
+          xlab = NA, #Exclude the x axis label
+          ylab = NA, #Exclude the y axis label
+          axes = F, #Exclude the axes for this one
+          cex = 1)) #Normal size of plots
+
+axis(side = 4) #Make the second axis on the right
+
+mtext(side = 4,line = 2.75, "Salinity (ppt)") #Define the second axis label.
+
+par(new = T)
+with(plot(Arranged_CTD_surface_df$Distancefrom_L1, #X-axis
+          Arranged_CTD_surface_df$OxygenPerSat, #Y-axis
+          col = "green", #Make the line green
+          type = "l", #Make it a line graph
+          xlab = NA, #Exclude the x axis label
+          ylab = NA, #Exclude the y axis label
+          axes = F, #Exclude the axes for this one
+          cex = 1,
+          ylim = c(5,13))) #Normal size of plots
+
+
+
+legend("bottomright",
+       legend = c("Temperature", "Salinity", "Oxygen"),
+       lty = c(1,0), 
+       pch = c(NA,16), 
+       col = c("red", "blue", "green"),
+       cex = 0.75)
+
+
+dev.copy(png, "Surface_CTD_regression", units = "in", width = 7, height = 5.6, res = 500)
+dev.off()
+
+
+
+
+```
+```{r 10m regressions}
+
+Arranged_CTD_10m_df = arrange(CTD_10m_df, Distancefrom_L1)
+
+
+par(mar = c(5,5,2,5)) #Define plot margins
+with(plot(Arranged_CTD_10m_df$Distancefrom_L1, #X-axis 
+          Arranged_CTD_10m_df$Temperature, #Y-axis
+     col = "red",  #Colour
+     type = "l", #Plot type
+     xlab = "Distance from the outermost sample (km)", #X-axis label
+     ylab = "Temperature (˚C) and Oxygen Saturation (%)", #Y-axis label
+     ylim = c(5,13))) 
+
+par(new = T)
+with(plot(Arranged_CTD_10m_df$Distancefrom_L1, #X-axis
+          Arranged_CTD_10m_df$Salinity, #Y-axis
+          col = "blue", #Make the line blue
+          type = "l", #Make it a line graph
+          xlab = NA, #Exclude the x axis label
+          ylab = NA, #Exclude the y axis label
+          axes = F, #Exclude the axes for this one
+          cex = 1)) #Normal size of plots
+
+axis(side = 4) #Make the second axis on the right
+
+mtext(side = 4,line = 2.75, "Salinity (ppt)") #Define the second axis label.
+
+par(new = T)
+with(plot(Arranged_CTD_10m_df$Distancefrom_L1, #X-axis
+          Arranged_CTD_10m_df$OxygenPerSat, #Y-axis
+          col = "green", #Make the line green
+          type = "l", #Make it a line graph
+          xlab = NA, #Exclude the x axis label
+          ylab = NA, #Exclude the y axis label
+          axes = F, #Exclude the axes for this one
+          cex = 1,
+          ylim = c(5,13)
+          )) #Normal size of plots
+
+
+
+legend("bottomright",
+       legend = c("Temperature", "Salinity", "Oxygen"),
+       lty = c(1,0), 
+       pch = c(NA,16), 
+       col = c("red", "blue", "green"),
+       cex = 0.75)
+
+
+dev.copy(png, "10m_CTD_regression", units = "in", width = 7, height = 5.6, res = 500)
+dev.off()
+
+
+```
+```{r p-value at surface - salinity}
+
+moddf_adjusted = read.csv("/Users/sven/Desktop/Project_R_analysis/CTD_data/Analysis/Useful_longsound.csv", row.names = 1)
+
+No_depth_adjusted = within(moddf_adjusted, rm("Depth","Station", "OxygenMgL")) 
+
+No_depth_adjusted = within(No_depth_adjusted, rm("Site.1"))
+
+No_depth_adjusted_nofluo = within(No_depth_adjusted, rm("Fluorescence"))
+
+write.csv(No_depth_adjusted_nofluo, "Hor_CTD_mantel_df.csv")
+
+Hor_CTD_mantel_df = read.csv("Hor_CTD_mantel_df.csv", row.names = 1)
+
+CTD_surface_mantel_df = Hor_CTD_mantel_df[c(1,3,5,7,9,11,13,15),]
+CTD_10m_mantel_df = Hor_CTD_mantel_df[c(2,4,6,8,10,12,14,16),]
+
+#Make CTD distance object
+Salinity_surface_mantel.dist = dist(cbind(CTD_surface_mantel_df$Salinity))
+Temperature_surface_mantel.dist = dist(cbind(CTD_surface_mantel_df$Temperature))
+OxPerSat_surface_mantel.dist = dist(cbind(CTD_surface_mantel_df$OxygenPerSat))
+
+Salinity_10m_mantel.dist = dist(cbind(CTD_10m_mantel_df$Salinity))
+Temperature_10m_mantel.dist = dist(cbind(CTD_10m_mantel_df$Temperature))
+OxygenPerSat_10m_mantel.dist = dist(cbind(CTD_10m_mantel_df$OxygenPerSat))
+
+
+#Adonis test
+Salinity_adonis_surface = adonis(Salinity_surface_mantel.dist ~ Distancefrom_L1, data = CTD_surface_df, permutations = 999)
+Temperature_adonis_surface = adonis(Temperature_surface_mantel.dist ~ Distancefrom_L1, data = CTD_surface_df, permutations = 999)
+OxPerSat_adonis_surface = adonis(OxPerSat_surface_mantel.dist ~ Distancefrom_L1, data = CTD_surface_df, permutations = 999)
+
+Salinity_adonis_10m = adonis(Salinity_10m_mantel.dist ~ Distancefrom_L1, data = CTD_10m_mantel_df, permutations = 999)
+Temperature_adonis_10m = adonis(Temperature_10m_mantel.dist ~ Distancefrom_L1, data = CTD_10m_mantel_df, permutations = 999)
+OxPerSat_adonis_10m = adonis(OxygenPerSat_10m_mantel.dist ~ Distancefrom_L1, data = CTD_10m_mantel_df, permutations = 999)
+
+Salinity_adonis_surface #p-value of 0.679 - non-significant
+Temperature_adonis_surface #p-value of 0.882 - non-significant
+OxPerSat_adonis_surface #p-value = 0.365 - non-significant
+
+Salinity_adonis_10m #p- value = 0.241 - non-significant
+Temperature_adonis_10m #p- value = 0.216 - non-significant
+OxPerSat_adonis_10m #p- value = 0.005 - significant
+
+```
+
+
+
+```{r Statistics}
+
+#Make new df with only variable of interest
+Salinity_surface_df = CTD_surface_mantel_df[, c(3,6), drop = F]
+Temperature_surface_df = CTD_surface_mantel_df[, c(1,6), drop = F]
+OxPerSat_surface_df = CTD_surface_mantel_df[, c(2,6), drop = F]
+Salinity_10m_df = CTD_10m_mantel_df[, c(3,6), drop = F]
+Temperature_10m_df = CTD_10m_mantel_df[, c(1,6), drop = F]
+OxPerSat_10m_df = CTD_10m_mantel_df[, c(2,6), drop = F]
+
+CTD_hor_10m_df = No_depth_adjusted_nofluo[c(2,4,6,8,10,16,18,20),]
+CTD_10m_df = data.frame(lapply(CTD_hor_10m_df, as.numeric), stringsAsFactors = T)#Extract data in the form of numeric values.
+rownames(CTD_10m_df) = rownames(CTD_hor_10m_df)  #Make sure rownames are attached for easier identification
+
+as.data.frame(Distance_list_surface)
+
+CTD_10m_df[1,4] = 0
+CTD_10m_df[2,4] = 5.59
+CTD_10m_df[3,4] = 14.3
+CTD_10m_df[4,4] = 10.67
+CTD_10m_df[5,4] = 8.47
+CTD_10m_df[6,4] = 4.73
+CTD_10m_df[7,4] = 3.16
+CTD_10m_df[8,4] = 2.47
+
+colnames(CTD_10m_df)[4] = "Distancefrom_L1"
+
+#Carry out spearman
+Salinity_surface_spearman = cor(Salinity_surface_df, method = "spearman")
+#rho = -0.1905 for Salinity vs. distance at the surface
+Temperature_surface_spearman = cor(Temperature_surface_df, method = "spearman")
+#rho = -0.2619 for Temperature vs. distance at the surface
+OxPerSat_surface_spearman = cor(OxPerSat_surface_df, method = "spearman")
+#rho = 0.2619 for Oxygen Saturation vs. distance at the surface
+
+Salinity_10m_spearman = cor(Salinity_10m_df, method = "spearman")
+#rho = -0.3333 for Salinity vs. distance at 10 m depth
+Temperature_10m_spearman = cor(Temperature_10m_df, method = "spearman")
+#rho = -0.3571 for Temperature vs. distance at 10 m depth
+OxPerSat_10m_spearman = cor(OxPerSat_10m_df, method = "spearman")
+#rho = -0.7857 for Oxygen Saturation vs. distance at 10 m depth
+
+#Oxygen/Salinity interaction
+cor.test(CTD_surface_df$OxygenPerSat, CTD_surface_df$Salinity, method = "s")
+#Non-significant - 0.1511
+#rho = 0.5714
+
+cor.test(CTD_10m_df$OxygenPerSat, CTD_10m_df$Salinity, method = "s")
+#Non-significant - 0.5364
+#rho = 0.2619
+
+cor.test(CTD_10m_df$OxygenPerSat[c(1,2,3,5)], D10_reference_ecolog$Bray_Distance, method = "s")
+```
+
+
+
+

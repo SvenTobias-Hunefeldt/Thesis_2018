@@ -1,0 +1,221 @@
+---
+title: "Figure_8"
+author: "Sven"
+date: "10/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Construct the phyloseq object as previously shown in Figure 3.
+```{r libraries required}
+library(phyloseq)  
+library(ggplot2)
+library(Rmisc)
+library(vegan)
+library(microbiome)
+library(MultNonParam)
+library(PMCMR)
+```
+```{r Subset Vert data}
+
+Fiord_phyloseq_Vert = subset_samples(Fiord_phyloseq, Sample_type == "Transverse" & Sample_Site == "L5")
+#Exclude transverse samples.
+Fiord_phyloseq_Vert
+```
+```{r Caclulate α-diversity}
+
+alpha_summary_Vert <- estimate_richness(Fiord_phyloseq_Vert, measures = c("Observed", "Shannon"))
+Evenness_Vert <- evenness(Fiord_phyloseq_Vert, 'pielou')
+alpha_summary_Vert$Pielou <- Evenness_Vert$pielou
+#combine with metadata
+alpha_meta_Vert <- data.frame(alpha_summary_Vert, sample_data(Fiord_phyloseq_Vert))
+alpha_meta_Vert
+```
+##Construct the plot
+```{r Make plot}
+
+#Make summary
+Observed_summary = summarySE(alpha_meta_Vert, "Observed", groupvars = "Sample_Depth")
+
+#Get the 1 m depth to be 0, and say we're treating it as such.
+Observed_Richness_Vert_D <- ggplot(Observed_summary, 
+                                   aes(x=Sample_Depth, 
+                                       y=Observed)) + 
+  geom_line()+
+  labs(y = expression ("Observed Richness"), x = expression("Sample Depth (m)")) +
+  expand_limits(y=0) +                        
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())+
+  #coord_flip()+
+  #scale_x_reverse()+
+  geom_errorbar(aes(ymin = Observed-se, ymax = Observed + se))
+
+Observed_Richness_Vert_D
+
+dev.copy(png, "Figure_3a_Observed", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+
+#There definitively seems to be a pattern, but 360m sample does not agree with it, why decrease? What's special at this depth? 
+  #Maybe as outside the metalimnion - soil influence?
+
+#Make summary
+Shannon_summary = summarySE(alpha_meta_Vert, "Shannon", groupvars = "Sample_Depth")
+
+Shannon_Richness_Vert_D <- ggplot(Shannon_summary, 
+                                   aes(x=Sample_Depth, 
+                                       y=Shannon,)) + 
+  geom_line()+
+  labs(y = expression ("Shannon Richness"), x = expression("Sample Depth (m)")) +
+  expand_limits(y=0) +                        
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())+
+  coord_flip()+
+  scale_x_reverse()+
+  geom_errorbar(aes(ymin = Shannon-se, ymax = Shannon + se))
+
+Shannon_Richness_Vert_D
+
+dev.copy(png, "Figure_3a_Shannon", units = "in", width = 5, height = 4, res = 500)
+dev.off()
+```
+#Statistics
+```{r Significance KW, results, results='markup'}
+#non parametric test
+
+
+kruskal.test(Observed ~ Sample_Depth, data = alpha_meta_Vert) #No significance.
+#0.215
+
+kruskal.test(Shannon ~ Sample_Depth, data = alpha_meta_Vert) #This means that the evenness and richness of the Fjord not does not change significantly when comparing sampling depths.
+#0.08942
+
+kruskal.test(Pielou ~ Sample_Depth, data = alpha_meta_Vert)
+
+```
+```{r KW interactions, results, results='markup'}
+
+inter_depth<-interaction(alpha_meta_Vert$Sample_Depth)
+KWInt_Shan<-kruskal.test(Observed ~ inter_depth, data = alpha_meta_Vert)
+
+```
+```{r Mantel significance}
+Obs.dist = dist(alpha_meta_Vert$Observed)
+Shan.dist = dist(alpha_meta_Vert$Shannon)
+
+Depth.dist = dist(alpha_meta_Vert$Sample_Depth)
+
+Mantel_richness_obs = mantel(Obs.dist, Depth.dist, permutations = 999)
+Mantel_richness_obs
+#R = 0.1276
+#Significance = 0.176
+
+Mantel_richness_shan = mantel(Shan.dist, Depth.dist, permutations = 999)
+Mantel_richness_shan
+#Shannon - R = 0.3543, significance = 0.028
+
+```
+```{r Excluded 360 m samples}
+alpha_meta_Vert_no360 = subset(alpha_meta_Vert, !Sample_Depth == "360")
+
+Obs.dist_no360 = dist(alpha_meta_Vert_no360$Observed)
+Shan.dist_no360 = dist(alpha_meta_Vert_no360$Shannon)
+
+Depth.dist_no360 = dist(alpha_meta_Vert_no360$Sample_Depth)
+
+Mantel_richness_no360 = mantel(Obs.dist_no360, Depth.dist_no360, permutations = 999)
+Mantel_richness
+#R = 0.1276
+#Significance = 0.176
+
+Mantel_richness_shan_no360 = mantel(Shan.dist_no360, Depth.dist_no360, permutations = 999)
+Mantel_richness_shan_no360
+#Shannon - R = 0.575, significance = 0.006
+
+```
+#ANOVA and PERMANOVA (Adonis) - CTD vs richness.
+```{r Import CTD data}
+
+
+Vertical_CTD = read.csv("/Users/sven/Desktop/Thesis/Final Code/Figure 10/LongSound_CTD.csv", row.names = 1)
+
+Vert_CTD = Vertical_CTD[-c(1:8, 15:20),]
+
+#Add sample Depth
+Vert_CTD$Sample_Depth = c(0,10,40,100,200,360)
+
+#Add CTD data to big df.
+Vert_CTD_alpha = merge(alpha_meta_Vert, Vert_CTD, by = "Sample_Depth")
+
+#Get rid of excess columnns
+Significance_setup = Vert_CTD_alpha[,-c(5:10,12,45,47,48:86)]
+
+```
+```{r ANOVA}
+
+ANOVA_alpha_Salinity = aov(Observed ~ as.factor(Salinity), data = Significance_setup)
+summary(ANOVA_alpha_Salinity)
+#Non-significant
+
+ANOVA_alpha_Oxygen = aov(Observed ~ as.factor(OxygenPerSat), data = Significance_setup)
+summary(ANOVA_alpha_Oxygen)
+#Non-significant
+
+```
+```{r PERMANOVA}
+Salinity.dist = dist(Significance_setup$Salinity)
+OxygenPerSat.dist = dist(Significance_setup$OxygenPerSat)
+Observed.dist = dist(Significance_setup$Observed)
+
+
+adonis(Observed.dist ~
+         Salinity,
+       data = Significance_setup,
+       permutations = 999)
+#Non-significant
+
+adonis(Observed.dist ~
+         OxygenPerSat,
+       data = Significance_setup,
+       permutations = 999)
+#Non-significant
+
+adonis(Observed.dist ~
+         Sample_Depth,
+       data = Significance_setup,
+       permutations = 999)
+#Non-significant with 360 sample
+
+```
+```{r No 360}
+
+Observedno360.dist = dist(alpha_meta_Vert_no360$Observed)
+adonis(Observedno360.dist ~
+         Sample_Depth,
+       data = alpha_meta_Vert_no360,
+       permutations = 999)
+#Significant without 360
+#p value = 0.012
+
+```
+```{r No surface to 40}
+
+alpha_meta_Vert_nosurfaceto40 = subset(alpha_meta_Vert, Sample_Depth > 40)
+
+Observed_deeps = dist(alpha_meta_Vert_nosurfaceto40$Observed)
+
+adonis(Observed_deeps ~
+         Sample_Depth,
+       data = alpha_meta_Vert_nosurfaceto40,
+       permutations = 999)
+#Non-significant without 0, 10, and 40.
+
+Pielou.dist = dist(alpha_meta_Vert$Pielou)
+adonis(Pielou.dist ~
+         Sample_Depth,
+       data = alpha_meta_Vert,
+       permutations = 999)
+```

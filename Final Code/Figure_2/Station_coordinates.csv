@@ -1,0 +1,30 @@
+Label,Station_Name,Lat,Long,Label_Lat,Label_Long,Description,Group,Colour
+L1,Long Sound Station 1,-46.04611111,166.7402778,-46,166,Long Sound Station 1,Long_Sound,Red
+L2,Long Sound Station 2,-46.09027778,166.7058333,-46,166,Long Sound Station 2,Long_Sound,Red
+L3,Long Sound Station 3,-45.95916667,166.8763889,-45,166,Long Sound Station 3,Long_Sound,Red
+L4,Long Sound Station 4,-45.98416667,166.8455556,-45,166,Long Sound Station 4,Long_Sound,Red
+L5,Long Sound Station 5,-45.98722222,166.8097222,-45,166,Long Sound Station 5,Long_Sound,Red
+L6,Long Sound Station 6,-46.00694444,166.7641667,-46,166,Long Sound Station 6,Long_Sound,Red
+L7,Long Sound Station 7,-46.04611111,166.7811111,-46,166,Long Sound Station 7,Long_Sound,Red
+L8,Long Sound Station 8,-46.06833333,166.7402778,-46,166,Long Sound Station 8,Long_Sound,Red
+Ch1,Chalky Inlet Station 1,-45.900582,166.675163,-45,166,Chalky Inlet Station 1,Chalky_Inlet,Green
+Ch2,Chalky Inlet Station 2,-45.95456,166.64123,-45,166,Chalky Inlet Station 2,Chalky_Inlet,Green
+Ch3,Chalky Inlet Station 3,-45.982478,166.605957,-45,166,Chalky Inlet Station 3,Chalky_Inlet,Green
+Ch4,Chalky Inlet Station 4,-46.075272,166.513229,-46,166,Chalky Inlet Station 4,Chalky_Inlet,Green
+Ch5,Chalky Inlet Station 5,-46.024602,166.5734,-46,166,Chalky Inlet Station 5,Chalky_Inlet,Green
+Br1,Breaksea Sound Station 1,-45.522877,166.929973,-45,166,Breaksea Sound Station 1,Breaksea_Sound,Black
+Br2,Breaksea Sound Station 2,-45.553073,166.845012,-45,166,Breaksea Sound Station 2,Breaksea_Sound,Black
+Br3,Breaksea Sound Station 3,-45.56995,166.776548,-45,166,Breaksea Sound Station 3,Breaksea_Sound,Black
+Br4,Breaksea Sound Station 4,-45.58742,166.66861,-45,166,Breaksea Sound Station 4,Breaksea_Sound,Black
+Db1,Doubtful/Bradshaw Sound Station 1,-45.282425,167.088499,-45,166,Doubtful/Bradshaw Sound Station 1,Doubtful_Sound,Black
+Db2,Doubtful/Bradshaw Sound Inner Station,-45.286982,167.147172,-45,166,Doubtful/Bradshaw Sound Inner Station,Doubtful_Sound,Black
+Db3,Doubtful/Bradshaw Sound Station 3,-45.291578,167.014532,-45,166,Doubtful/Bradshaw Sound Station 3,Doubtful_Sound,Black
+Db4,Doubtful/Bradshaw Sound Outer Station,-45.305,166.9361111,-45,166,Doubtful/Bradshaw Sound Outer Station,Doubtful_Sound,Black
+Db5,Doubtful/Bradshaw Sound Station 5,-45.387138,167.09626,-45,166,Doubtful/Bradshaw Sound Station 5,Doubtful_Sound,Black
+Wj1,Wet Jacket Arm Outer Station,-45.673273,166.728867,-45,166,Wet Jacket Arm Outer Station,Wet_Jacket_Arm,Purple
+Wj2,Wet Jacket Arm Inner Station,-45.633493,166.903872,-45,166,Wet Jacket Arm Inner Station,Wet_Jacket_Arm,Purple
+Wj3,Wet Jacket Arm Middle Station,-45.65972222,166.8216667,-45,166,Wet Jacket Arm Middle Station,Wet_Jacket_Arm,Purple
+Ds1,Dusky Sound Middle Station,-45.737637,166.744565,-45,166,Dusky Sound Middle Station,Dusky_Sound,Turquoise
+Ds2,Dusky Sound Inner Station,-45.730955,166.925998,-45,166,Dusky Sound Inner Station,Dusky_Sound,Turquoise
+Ds3,Dusky Sound Station 3,-45.71198,166.826862,-45,166,Dusky Sound Station 3,Dusky_Sound,Turquoise
+Ds4,Dusky Sound Station 4,-45.78329,166.640587,-45,166,Dusky Sound Station 4,Dusky_Sound,Turquoise

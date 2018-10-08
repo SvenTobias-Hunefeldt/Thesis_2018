@@ -1,0 +1,97 @@
+---
+title: "Final Figure 1"
+author: "Sven"
+date: "8/6/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Open packages necessary for making the figure.
+```{r Load packages}
+library(maps)
+library(mapdata)
+library(ggplot2) #Utilise ggplot2 version 2.1.0, until the next version release of ggmaps (>2.6.1)
+
+
+```
+#Figure 1 a
+```{r Map of New Zealand}
+
+NZ = map("worldHires","New Zealand", 
+    xlim=c(165,179),
+    ylim=c(-48,-34), 
+    col="gray90", 
+    fill = TRUE,
+    resolution = 0) 
+
+map.scale(175,-34.5,ratio=FALSE,relwidth=0.2,cex=0.6)
+
+#Add Fiordland label
+text(166,-44.3, "Fiordland", cex = 0.5, col = "red")
+
+Fig1a = recordPlot("Figure1a")
+
+pdf("/Users/sven/Desktop/Project_R_analysis/Maps/Figure_1a.pdf")
+Fig1a
+dev.off()
+
+
+```
+Add the red circle as a component of post-processing.
+
+#Figure 1 C
+```{r Import the important data file}
+
+samps = read.csv("Your/File/Path/Figure_1/Station_coordinates.csv")
+
+```
+```{r Map of Fiordland with sample locations}
+
+color = cat
+
+
+data1 = data.frame(X = c(samps$Long),
+                   Y = c(samps$Lat)
+                   )
+
+Siteshapelist = c(Breaksea_Sound = 15, Chalky_Inlet = 16, Doubtful_Sound = 17, Dusky_Sound = 18, Long_Sound = 25, Wet_Jacket_Arm = 2)
+
+    map <- qmap('Fiordland', zoom = 8, maptype = 'terrain', scale = "auto")
+final_map = map + 
+  geom_point(data = data1, aes(x = X, y = Y, 
+                               shape = samps$Group, 
+                               size=1)) +
+  guides(colour=FALSE,
+         size=FALSE, 
+         alpha = FALSE, 
+         shape = guide_legend(title = "Sample Site")) +
+  scale_shape_manual(labels = c("Breaksea Sound", 
+                                "Chalky Inlet",
+                                "Doubtful Sound", 
+                                "Dusky Sound", 
+                                "Long Sound", 
+                                "Wet Jacket Arm"), 
+                     values = Siteshapelist, 
+                     breaks = c("Breaksea_Sound", 
+                                "Chalky_Inlet", 
+                                "Doubtful_Sound", 
+                                "Dusky_Sound", 
+                                "Long_Sound", 
+                                "Wet_Jacket_Arm"), 
+                     drop = FALSE)
+
+final_map
+    
+pdf("/Users/sven/Desktop/Project_R_analysis/Figure_1_Maps/Figure_1b_colour_S.pdf")
+final_map
+dev.off()
+
+```
+The scale was added as a post-processing step using 2 reference points, determining the distance between them and using that to prodiuce the scale.
+
+
+
+
+
