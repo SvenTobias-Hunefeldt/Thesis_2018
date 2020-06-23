@@ -1691,7 +1691,7 @@ adjusted_p.value_surface = p.adjust(Rho_p.value_fixed_df_surface$p.value, method
 #Convert list into dataframe to add to summary table.
 adjusted_p.value_surface = as.data.frame(adjusted_p.value_surface)
 
-#Make back up in case of fuck up
+#Make back up in case of errors
 NMDS1_spearman_noadjustedpvalue_surface = NMDS1_spearman_surface
 
 #Bind adjusted p-value onto data frame
