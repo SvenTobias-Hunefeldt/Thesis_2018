@@ -191,7 +191,7 @@ dev.off()
 #Extract coordinates by axis
 SiteNMDScoordinates = NMDS.ord_inout$points
 
-#Save a pristine copy in case of fuck up
+#Save a pristine copy in case of errors
 alpha_meta_in_out_v0 = alpha_meta_in_out
 
 #Bind NMDS columns to dataframe
